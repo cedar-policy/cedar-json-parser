@@ -3,7 +3,7 @@ use vstd::prelude::*;
 verus! {
 
 /// Spec: two byte sequences are equal
-pub(crate) open spec fn seq_equal(a: Seq<u8>, b: Seq<u8>) -> bool {
+pub open spec fn seq_equal(a: Seq<u8>, b: Seq<u8>) -> bool {
     a =~= b
 }
 

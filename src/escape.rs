@@ -31,7 +31,7 @@ verus! {
 
 /// Spec: the byte that a simple escape character decodes to (RFC 8259 §7).
 /// For example, 'n' maps to newline (0x0A).
-pub(crate) open spec fn spec_simple_escape_byte(esc: u8) -> u8 {
+pub open spec fn spec_simple_escape_byte(esc: u8) -> u8 {
     if esc == QUOTE() { QUOTE() }             // \" -> "
     else if esc == BACKSLASH() { BACKSLASH() } // \\ -> \
     else if esc == SLASH() { SLASH() }         // \/ -> /
@@ -53,7 +53,7 @@ pub(crate) open spec fn spec_simple_escape_byte(esc: u8) -> u8 {
 ///
 /// Returns `None` on any malformed escape sequence.
 /// Returns `Some(bytes)` with the fully decoded byte sequence on success.
-pub(crate) open spec fn spec_decode(input: Seq<u8>, start: nat, end: nat) -> Option<Seq<u8>>
+pub open spec fn spec_decode(input: Seq<u8>, start: nat, end: nat) -> Option<Seq<u8>>
     recommends start <= end && end <= input.len(),
     decreases end - start,
 {
@@ -130,7 +130,7 @@ pub(crate) open spec fn spec_decode(input: Seq<u8>, start: nat, end: nat) -> Opt
 ///
 /// When there are no escape sequences, the decoded output is just
 /// the raw bytes themselves: `input[start..end]`.
-pub(crate) open spec fn spec_decode_identity(input: Seq<u8>, start: nat, end: nat) -> Seq<u8>
+pub open spec fn spec_decode_identity(input: Seq<u8>, start: nat, end: nat) -> Seq<u8>
     recommends start <= end && end <= input.len(),
 {
     input.subrange(start as int, end as int)
@@ -189,7 +189,7 @@ enum ChunkResult {
 }
 
 /// Spec: spec_decode succeeds (returns Some) for the given range.
-pub(crate) open spec fn spec_decode_ok(input: Seq<u8>, start: nat, end: nat) -> bool {
+pub open spec fn spec_decode_ok(input: Seq<u8>, start: nat, end: nat) -> bool {
     spec_decode(input, start, end) is Some
 }
 
@@ -485,7 +485,7 @@ fn decode_one_chunk(input: &[u8], i: usize, end: usize, out: &mut Vec<u8>) -> (r
                 ChunkResult::Ok { next: after_pair }
             } else if 0xDC00 <= cp && cp <= 0xDFFF {
                 // Lone low surrogate: invalid
-                return ChunkResult::Err { pos: after_hex };
+                ChunkResult::Err { pos: after_hex }
             } else {
                 // BMP (non-surrogate)
                 let ghost out_pre = out@;
@@ -502,7 +502,7 @@ fn decode_one_chunk(input: &[u8], i: usize, end: usize, out: &mut Vec<u8>) -> (r
             }
         } else {
             // Unknown escape character: not simple, not 'u' → None
-            return ChunkResult::Err { pos: esc_pos };
+            ChunkResult::Err { pos: esc_pos }
         }
     }
 }

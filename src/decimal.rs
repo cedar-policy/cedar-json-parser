@@ -7,7 +7,7 @@ verus! {
 // =============================================================================
 
 /// Spec: 10^n for n in 0..=4
-pub(crate) open spec fn spec_pow10(n: nat) -> int
+pub open spec fn spec_pow10(n: nat) -> int
     decreases n,
 {
     if n == 0 { 1 }

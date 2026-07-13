@@ -18,9 +18,11 @@ vstd = "=0.0.0-2026-06-14-0213"
 # - explicit casts document type reasoning for the verifier
 # - explicit saturating patterns are needed for termination proofs
 # - match with wildcard arm is sometimes clearer in proof code
+# - `!(a <= x && x <= b)` boundary checks mirror spec predicates
 [lints.clippy]
 assign_op_pattern = "allow"
 manual_range_contains = "allow"
 unnecessary_cast = "allow"
 implicit_saturating_sub = "allow"
 single_match = "allow"
+nonminimal_bool = "allow"

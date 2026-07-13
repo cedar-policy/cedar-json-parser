@@ -35,10 +35,11 @@ pub(crate) mod decimal;
 pub(crate) mod dedup;
 pub(crate) mod escape;
 pub(crate) mod fuel_mono;
-pub(crate) mod json_spec;
+pub mod json_spec;
 mod parser;
 pub(crate) mod tokenizer;
 pub(crate) mod utf8_validation;
 
 pub use parser::{parse_json, JsonValue, ObjectEntry, ParseError, ParseJsonError};
-pub use tokenizer::TokenizeError;
+pub use json_spec::JsonValueSpec;
+pub use tokenizer::{Token, TokenKind, TokenizeError};

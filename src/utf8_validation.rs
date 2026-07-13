@@ -148,7 +148,7 @@ proof fn lemma_f5f7_over_max(b0: u8, b1: u8, b2: u8, b3: u8)
 // =============================================================================
 
 /// Result of validating one UTF-8 character.
-pub enum Utf8CharResult {
+pub(crate) enum Utf8CharResult {
     /// Valid character consuming `len` bytes (1-4).
     Ok { len: usize },
     /// Invalid byte sequence.
@@ -158,7 +158,7 @@ pub enum Utf8CharResult {
 /// Validate one UTF-8 character starting at `pos` in `input[pos..end)`.
 /// On success, returns the number of bytes consumed (1-4).
 /// Proven: Ok <==> vstd's `valid_first_scalar` holds on the subrange.
-pub fn validate_utf8_char(input: &[u8], pos: usize, end: usize) -> (result: Utf8CharResult)
+pub(crate) fn validate_utf8_char(input: &[u8], pos: usize, end: usize) -> (result: Utf8CharResult)
     requires
         pos < end,
         end <= input@.len(),

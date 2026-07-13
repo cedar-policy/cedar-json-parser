@@ -8,7 +8,7 @@ verus! {
 // =============================================================================
 
 /// Spec: the index of the first non-whitespace byte at or after `pos`
-pub open spec fn spec_skip_whitespace(input: Seq<u8>, pos: nat) -> nat
+pub(crate) open spec fn spec_skip_whitespace(input: Seq<u8>, pos: nat) -> nat
     decreases input.len() - pos,
 {
     if pos >= input.len() {
@@ -75,7 +75,7 @@ proof fn lemma_skip_whitespace_all_ws(input: Seq<u8>, pos: nat)
 }
 
 /// Exec: advance past whitespace, returning the index of first non-whitespace byte
-pub fn skip_whitespace(input: &[u8], pos: usize) -> (result: usize)
+pub(crate) fn skip_whitespace(input: &[u8], pos: usize) -> (result: usize)
     requires
         pos <= input@.len(),
     ensures
@@ -106,7 +106,7 @@ pub fn skip_whitespace(input: &[u8], pos: usize) -> (result: usize)
 // =============================================================================
 
 /// Spec: the index after consuming a run of ASCII digits starting at `pos`
-pub open spec fn spec_consume_digits(input: Seq<u8>, pos: nat) -> nat
+pub(crate) open spec fn spec_consume_digits(input: Seq<u8>, pos: nat) -> nat
     decreases input.len() - pos,
 {
     if pos >= input.len() {
@@ -173,7 +173,7 @@ proof fn lemma_consume_digits_stops_at_non_digit(input: Seq<u8>, pos: nat)
 }
 
 /// Exec: consume a run of ASCII digits, returning the position after the last digit
-pub fn consume_digits(input: &[u8], pos: usize) -> (result: usize)
+pub(crate) fn consume_digits(input: &[u8], pos: usize) -> (result: usize)
     requires
         pos <= input@.len(),
     ensures
@@ -208,7 +208,7 @@ pub fn consume_digits(input: &[u8], pos: usize) -> (result: usize)
 // =============================================================================
 
 /// Exec: check and consume exactly 4 hex digits. Returns Some(pos+4) on success.
-pub fn consume_four_hex_digits(input: &[u8], pos: usize) -> (result: Option<usize>)
+pub(crate) fn consume_four_hex_digits(input: &[u8], pos: usize) -> (result: Option<usize>)
     requires
         pos <= input@.len(),
     ensures
@@ -243,7 +243,7 @@ pub fn consume_four_hex_digits(input: &[u8], pos: usize) -> (result: Option<usiz
 // --- Number spec: characterizes every byte in a valid JSON number literal ---
 
 /// Spec: byte is valid in a JSON number literal (digit, '-', '+', '.', 'e', 'E')
-pub open spec fn spec_is_number_byte(b: u8) -> bool {
+pub(crate) open spec fn spec_is_number_byte(b: u8) -> bool {
     spec_is_ascii_digit(b)
     || b == DASH()   // 0x2D '-'
     || b == PLUS()   // 0x2B '+'
@@ -253,13 +253,13 @@ pub open spec fn spec_is_number_byte(b: u8) -> bool {
 }
 
 /// Spec: all bytes in input[start..end) are valid number bytes.
-pub open spec fn spec_all_number_bytes(input: Seq<u8>, start: nat, end: nat) -> bool {
+pub(crate) open spec fn spec_all_number_bytes(input: Seq<u8>, start: nat, end: nat) -> bool {
     forall|k: int| start <= k < end ==> spec_is_number_byte(#[trigger] input[k])
 }
 
 /// Spec: the integer part at `pos` is valid — either "0" not followed by digit,
 /// or digit1-9 followed by zero or more digits. Returns the end position.
-pub open spec fn spec_int_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
+pub(crate) open spec fn spec_int_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
     recommends pos <= input.len(),
 {
     if pos >= input.len() {
@@ -280,7 +280,7 @@ pub open spec fn spec_int_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
 }
 
 /// Spec: consume optional fractional part. Returns end position (unchanged if no '.').
-pub open spec fn spec_frac_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
+pub(crate) open spec fn spec_frac_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
     recommends pos <= input.len(),
 {
     if pos >= input.len() || input[pos as int] != DOT() {
@@ -297,7 +297,7 @@ pub open spec fn spec_frac_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
 }
 
 /// Spec: consume optional exponent part. Returns end position (unchanged if no 'e'/'E').
-pub open spec fn spec_exp_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
+pub(crate) open spec fn spec_exp_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
     recommends pos <= input.len(),
 {
     if pos >= input.len() || (input[pos as int] != LOWER_E() && input[pos as int] != UPPER_E()) {
@@ -322,7 +322,7 @@ pub open spec fn spec_exp_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
 
 /// Spec: a valid JSON number at position `pos` ends at position `end`.
 /// This is the complete RFC 8259 §6 grammar as a spec function.
-pub open spec fn spec_number_end(input: Seq<u8>, pos: nat) -> Option<nat>
+pub(crate) open spec fn spec_number_end(input: Seq<u8>, pos: nat) -> Option<nat>
     recommends pos <= input.len(),
 {
     // Optional leading '-'
@@ -343,7 +343,7 @@ pub open spec fn spec_number_end(input: Seq<u8>, pos: nat) -> Option<nat>
 }
 
 /// Spec: input[start..end) is a valid JSON number literal.
-pub open spec fn spec_is_valid_json_number(input: Seq<u8>, start: nat, end: nat) -> bool {
+pub(crate) open spec fn spec_is_valid_json_number(input: Seq<u8>, start: nat, end: nat) -> bool {
     start < end
     && end <= input.len()
     && spec_number_end(input, start) == Some(end)
@@ -352,7 +352,7 @@ pub open spec fn spec_is_valid_json_number(input: Seq<u8>, start: nat, end: nat)
 // --- Strengthened exec functions ---
 
 /// Result of consuming a number literal: Ok(end_position) or Err(position of error)
-pub enum NumberResult {
+pub(crate) enum NumberResult {
     Ok { end: usize },
     Err { pos: usize },
 }
@@ -360,7 +360,7 @@ pub enum NumberResult {
 /// Consume the integer part of a number literal starting at `pos`.
 /// Expects pos to point at the first digit (after optional '-').
 /// Returns the position after the integer part, or None on error.
-pub fn consume_int_part(input: &[u8], pos: usize) -> (result: Option<usize>)
+pub(crate) fn consume_int_part(input: &[u8], pos: usize) -> (result: Option<usize>)
     requires
         pos <= input@.len(),
     ensures
@@ -396,7 +396,7 @@ pub fn consume_int_part(input: &[u8], pos: usize) -> (result: Option<usize>)
 /// Consume the fractional part of a number literal, if present.
 /// `pos` should point at the potential '.'.
 /// Returns the position after the fractional part (unchanged if no '.' present).
-pub fn consume_frac_part(input: &[u8], pos: usize) -> (result: Option<usize>)
+pub(crate) fn consume_frac_part(input: &[u8], pos: usize) -> (result: Option<usize>)
     requires
         pos <= input@.len(),
     ensures
@@ -426,7 +426,7 @@ pub fn consume_frac_part(input: &[u8], pos: usize) -> (result: Option<usize>)
 /// Consume the exponent part of a number literal, if present.
 /// `pos` should point at the potential 'e'/'E'.
 /// Returns the position after the exponent part (unchanged if no 'e'/'E').
-pub fn consume_exp_part(input: &[u8], pos: usize) -> (result: Option<usize>)
+pub(crate) fn consume_exp_part(input: &[u8], pos: usize) -> (result: Option<usize>)
     requires
         pos <= input@.len(),
     ensures
@@ -459,7 +459,7 @@ pub fn consume_exp_part(input: &[u8], pos: usize) -> (result: Option<usize>)
 /// Consume a complete JSON number literal.
 /// `pos` is the start position (may point at '-' or first digit).
 /// Returns Ok(end) where end is position after the number, or Err on invalid input.
-pub fn consume_number(input: &[u8], pos: usize) -> (result: NumberResult)
+pub(crate) fn consume_number(input: &[u8], pos: usize) -> (result: NumberResult)
     requires
         pos <= input@.len(),
     ensures
@@ -512,7 +512,7 @@ pub fn consume_number(input: &[u8], pos: usize) -> (result: NumberResult)
 // =============================================================================
 
 /// Result of consuming a string literal
-pub enum StringResult {
+pub(crate) enum StringResult {
     Ok { end: usize },
     UnterminatedString,
     InvalidEscape { pos: usize },
@@ -522,7 +522,7 @@ pub enum StringResult {
 /// Consume a JSON string literal body (after opening '"').
 /// Returns the position just after the closing '"'.
 /// Validates that unescaped content is valid UTF-8.
-pub fn consume_string(input: &[u8], pos: usize) -> (result: StringResult)
+pub(crate) fn consume_string(input: &[u8], pos: usize) -> (result: StringResult)
     requires
         pos <= input@.len(),
     ensures
@@ -588,7 +588,7 @@ pub fn consume_string(input: &[u8], pos: usize) -> (result: StringResult)
 
 /// Consume a known keyword starting at `pos`.
 /// Returns Some(pos + keyword.len()) if the bytes match, None otherwise.
-pub fn consume_keyword(input: &[u8], pos: usize, keyword: &[u8]) -> (result: Option<usize>)
+pub(crate) fn consume_keyword(input: &[u8], pos: usize, keyword: &[u8]) -> (result: Option<usize>)
     requires
         pos <= input@.len(),
         keyword@.len() > 0,
@@ -629,7 +629,7 @@ pub fn consume_keyword(input: &[u8], pos: usize, keyword: &[u8]) -> (result: Opt
 // =============================================================================
 
 /// The kind of a JSON token
-pub enum TokenKind {
+pub(crate) enum TokenKind {
     Null,
     True,
     False,
@@ -644,14 +644,14 @@ pub enum TokenKind {
 }
 
 /// A token with its kind and span [start, end) in the input
-pub struct Token {
+pub(crate) struct Token {
     pub kind: TokenKind,
     pub start: usize,
     pub end: usize,
 }
 
 /// Result of get_token: either a token, EOF, or an error at a position
-pub enum TokenResult {
+pub(crate) enum TokenResult {
     Ok { token: Token },
     Eof,
     ErrUnexpectedEof { pos: usize },
@@ -671,7 +671,7 @@ pub enum TokenResult {
 /// - String tokens are delimited by `"` (opening quote at start)
 /// - Single-character structural tokens have the correct byte
 /// - Number tokens start with '-' or a digit
-pub open spec fn token_content_valid(token: Token, input: Seq<u8>) -> bool {
+pub(crate) open spec fn token_content_valid(token: Token, input: Seq<u8>) -> bool {
     // Common structural requirement: non-empty span within bounds
     &&& token.start < token.end
     &&& token.end <= input.len()
@@ -731,7 +731,7 @@ pub open spec fn token_content_valid(token: Token, input: Seq<u8>) -> bool {
 ///   the previous token.end produce non-overlapping spans
 /// - **Content validity**: token kind matches the actual bytes at the span
 ///   (keywords have exact bytes, strings start with `"`, etc.)
-pub fn get_token(input: &[u8], pos: usize) -> (result: TokenResult)
+pub(crate) fn get_token(input: &[u8], pos: usize) -> (result: TokenResult)
     requires
         pos <= input@.len(),
     ensures
@@ -874,7 +874,7 @@ pub enum TokenizeError {
 /// - Tokens are non-overlapping and ordered (each starts >= previous end)
 /// - Every token's content is valid for its kind (keywords match bytes, etc.)
 /// - Gaps between tokens (and before first / after last) are all whitespace
-pub fn tokenize_all(input: &[u8]) -> (result: Result<Vec<Token>, TokenizeError>)
+pub(crate) fn tokenize_all(input: &[u8]) -> (result: Result<Vec<Token>, TokenizeError>)
     ensures
         match result {
             Ok(tokens) => {

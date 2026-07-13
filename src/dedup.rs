@@ -3,12 +3,12 @@ use vstd::prelude::*;
 verus! {
 
 /// Spec: two byte sequences are equal
-pub open spec fn seq_equal(a: Seq<u8>, b: Seq<u8>) -> bool {
+pub(crate) open spec fn seq_equal(a: Seq<u8>, b: Seq<u8>) -> bool {
     a =~= b
 }
 
 /// Exec: compare two byte slices for equality
-pub fn slices_equal(a: &[u8], b: &[u8]) -> (result: bool)
+pub(crate) fn slices_equal(a: &[u8], b: &[u8]) -> (result: bool)
     ensures
         result == (a@ =~= b@),
 {
@@ -37,7 +37,7 @@ pub fn slices_equal(a: &[u8], b: &[u8]) -> (result: bool)
 /// of the first key that is a duplicate of an earlier key.
 ///
 /// Proven: if Ok, all pairs of keys are distinct.
-pub fn check_no_duplicate_keys(keys: &[Vec<u8>]) -> (result: Result<(), usize>)
+pub(crate) fn check_no_duplicate_keys(keys: &[Vec<u8>]) -> (result: Result<(), usize>)
     ensures
         match result {
             Ok(()) => {

@@ -7,7 +7,7 @@ verus! {
 // =============================================================================
 
 /// Spec: 10^n for n in 0..=4
-pub open spec fn spec_pow10(n: nat) -> int
+pub(crate) open spec fn spec_pow10(n: nat) -> int
     decreases n,
 {
     if n == 0 { 1 }
@@ -25,7 +25,7 @@ proof fn lemma_pow10_values()
 }
 
 /// Exec: compute 10^n for n in 0..=4.
-pub fn pow10(n: u32) -> (result: i64)
+pub(crate) fn pow10(n: u32) -> (result: i64)
     requires
         n <= 4,
     ensures
@@ -43,7 +43,7 @@ pub fn pow10(n: u32) -> (result: i64)
 /// Checks whether the scaled decimal value fits in i64.
 ///
 /// Returns `true` iff `int_val * 10000 + frac_digits * 10^(4-frac_len) * sign` fits in i64.
-pub fn decimal_overflow_check(int_val: i64, frac_digits: i64, frac_len: u32, is_neg: bool) -> (result: bool)
+pub(crate) fn decimal_overflow_check(int_val: i64, frac_digits: i64, frac_len: u32, is_neg: bool) -> (result: bool)
     requires
         1 <= frac_len <= 4,
         0 <= frac_digits <= 9999,

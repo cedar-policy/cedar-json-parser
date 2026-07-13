@@ -1,9 +1,10 @@
 [package]
-name = "mcp-tools-sdk-verus-proofs"
+name = "cedar-json-parser"
 version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
 rust-version = "1.90"
+description = "A formally verified JSON parser (RFC 8259) using Verus"
 
 [package.metadata.verus]
 verify = true

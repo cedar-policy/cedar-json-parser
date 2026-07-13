@@ -31,7 +31,7 @@ verus! {
 
 /// Spec: the byte that a simple escape character decodes to (RFC 8259 §7).
 /// For example, 'n' maps to newline (0x0A).
-pub open spec fn spec_simple_escape_byte(esc: u8) -> u8 {
+pub(crate) open spec fn spec_simple_escape_byte(esc: u8) -> u8 {
     if esc == QUOTE() { QUOTE() }             // \" -> "
     else if esc == BACKSLASH() { BACKSLASH() } // \\ -> \
     else if esc == SLASH() { SLASH() }         // \/ -> /
@@ -53,7 +53,7 @@ pub open spec fn spec_simple_escape_byte(esc: u8) -> u8 {
 ///
 /// Returns `None` on any malformed escape sequence.
 /// Returns `Some(bytes)` with the fully decoded byte sequence on success.
-pub open spec fn spec_decode(input: Seq<u8>, start: nat, end: nat) -> Option<Seq<u8>>
+pub(crate) open spec fn spec_decode(input: Seq<u8>, start: nat, end: nat) -> Option<Seq<u8>>
     recommends start <= end && end <= input.len(),
     decreases end - start,
 {
@@ -130,7 +130,7 @@ pub open spec fn spec_decode(input: Seq<u8>, start: nat, end: nat) -> Option<Seq
 ///
 /// When there are no escape sequences, the decoded output is just
 /// the raw bytes themselves: `input[start..end]`.
-pub open spec fn spec_decode_identity(input: Seq<u8>, start: nat, end: nat) -> Seq<u8>
+pub(crate) open spec fn spec_decode_identity(input: Seq<u8>, start: nat, end: nat) -> Seq<u8>
     recommends start <= end && end <= input.len(),
 {
     input.subrange(start as int, end as int)
@@ -170,7 +170,7 @@ proof fn lemma_no_escapes_identity(input: Seq<u8>, start: nat, end: nat)
 // =============================================================================
 
 /// Result of decoding a JSON string's escape sequences.
-pub enum DecodeResult {
+pub(crate) enum DecodeResult {
     /// Successfully decoded; `bytes` contains the UTF-8 decoded content.
     Ok { bytes: Vec<u8> },
     /// No escapes found; the raw bytes are already valid content.
@@ -189,7 +189,7 @@ enum ChunkResult {
 }
 
 /// Spec: spec_decode succeeds (returns Some) for the given range.
-pub open spec fn spec_decode_ok(input: Seq<u8>, start: nat, end: nat) -> bool {
+pub(crate) open spec fn spec_decode_ok(input: Seq<u8>, start: nat, end: nat) -> bool {
     spec_decode(input, start, end) is Some
 }
 
@@ -520,7 +520,7 @@ fn decode_one_chunk(input: &[u8], i: usize, end: usize, out: &mut Vec<u8>) -> (r
 /// - `NoEscapes` implies `spec_decode` returns `Some(input[start..end])`
 /// - `Ok { bytes }` implies `spec_decode` returns `Some(bytes@)` (unconditional)
 /// - `Err` implies `spec_decode` returns `None`
-pub fn decode_json_escapes_bytes(input: &[u8], start: usize, end: usize) -> (result: DecodeResult)
+pub(crate) fn decode_json_escapes_bytes(input: &[u8], start: usize, end: usize) -> (result: DecodeResult)
     requires
         start <= end,
         end <= input@.len(),

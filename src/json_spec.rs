@@ -22,7 +22,7 @@ verus! {
 /// Strings are decoded byte sequences (escapes resolved).
 /// Objects are sequences of (key, value) pairs with unique keys.
 /// Arrays are sequences of values.
-pub enum JsonValueSpec {
+pub(crate) enum JsonValueSpec {
     Null,
     Bool { val: bool },
     /// Number: raw bytes of the number literal (already proven valid RFC 8259 §6)
@@ -50,7 +50,7 @@ pub enum JsonValueSpec {
 /// Spec: decode a string token's content.
 /// Given a String token spanning input[start..end], the decoded content is
 /// the escape-decoded bytes of input[start+1..end-1] (stripping quotes).
-pub open spec fn spec_decode_string_token(input: Seq<u8>, start: nat, end: nat) -> Option<Seq<u8>>
+pub(crate) open spec fn spec_decode_string_token(input: Seq<u8>, start: nat, end: nat) -> Option<Seq<u8>>
     recommends start < end && end <= input.len(),
 {
     if end - start < 2 {
@@ -65,7 +65,7 @@ pub open spec fn spec_decode_string_token(input: Seq<u8>, start: nat, end: nat) 
 ///
 /// Uses `fuel` to ensure termination. Sufficient fuel always exists for
 /// well-formed token streams (every recursive call advances idx strictly).
-pub open spec fn spec_parse_value(input: Seq<u8>, tokens: Seq<Token>, idx: nat, fuel: nat) -> Option<(JsonValueSpec, nat)>
+pub(crate) open spec fn spec_parse_value(input: Seq<u8>, tokens: Seq<Token>, idx: nat, fuel: nat) -> Option<(JsonValueSpec, nat)>
     decreases fuel, tokens.len() - idx, 2nat,
 {
     if fuel == 0 || idx >= tokens.len() {
@@ -96,7 +96,7 @@ pub open spec fn spec_parse_value(input: Seq<u8>, tokens: Seq<Token>, idx: nat, 
 
 /// Spec: parse array elements after '['. Looks for ']' (empty) or value *( ',' value ) ']'.
 /// Returns Some((Array { elements }, next_idx_after_']')) or None.
-pub open spec fn spec_parse_array(input: Seq<u8>, tokens: Seq<Token>, idx: nat, fuel: nat) -> Option<(JsonValueSpec, nat)>
+pub(crate) open spec fn spec_parse_array(input: Seq<u8>, tokens: Seq<Token>, idx: nat, fuel: nat) -> Option<(JsonValueSpec, nat)>
     decreases fuel, tokens.len() - idx, 1nat,
 {
     if fuel == 0 || idx >= tokens.len() {
@@ -111,7 +111,7 @@ pub open spec fn spec_parse_array(input: Seq<u8>, tokens: Seq<Token>, idx: nat, 
 
 /// Spec: parse comma-separated array elements, accumulating into `acc`.
 /// Fuel decreases only for nested value parsing, not for sibling iteration.
-pub open spec fn spec_parse_array_elements(
+pub(crate) open spec fn spec_parse_array_elements(
     input: Seq<u8>, tokens: Seq<Token>, idx: nat, acc: Seq<JsonValueSpec>, fuel: nat,
 ) -> Option<(JsonValueSpec, nat)>
     decreases fuel, tokens.len() - idx, 0nat,
@@ -142,7 +142,7 @@ pub open spec fn spec_parse_array_elements(
 }
 
 /// Spec: parse object members after '{'. Looks for '}' (empty) or member *( ',' member ) '}'.
-pub open spec fn spec_parse_object(input: Seq<u8>, tokens: Seq<Token>, idx: nat, fuel: nat) -> Option<(JsonValueSpec, nat)>
+pub(crate) open spec fn spec_parse_object(input: Seq<u8>, tokens: Seq<Token>, idx: nat, fuel: nat) -> Option<(JsonValueSpec, nat)>
     decreases fuel, tokens.len() - idx, 1nat,
 {
     if fuel == 0 || idx >= tokens.len() {
@@ -159,7 +159,7 @@ pub open spec fn spec_parse_object(input: Seq<u8>, tokens: Seq<Token>, idx: nat,
 /// Each member is: string ':' value
 /// Rejects duplicate keys.
 /// Fuel decreases only for nested value parsing, not for sibling iteration.
-pub open spec fn spec_parse_object_members(
+pub(crate) open spec fn spec_parse_object_members(
     input: Seq<u8>, tokens: Seq<Token>, idx: nat, acc: Seq<(Seq<u8>, JsonValueSpec)>, fuel: nat,
 ) -> Option<(JsonValueSpec, nat)>
     decreases fuel, tokens.len() - idx, 0nat,
@@ -213,7 +213,7 @@ pub open spec fn spec_parse_object_members(
 }
 
 /// Spec: does a key already exist in the accumulated entries?
-pub open spec fn spec_key_exists(entries: Seq<(Seq<u8>, JsonValueSpec)>, key: Seq<u8>) -> bool {
+pub(crate) open spec fn spec_key_exists(entries: Seq<(Seq<u8>, JsonValueSpec)>, key: Seq<u8>) -> bool {
     exists|i: int| 0 <= i && i < entries.len() && entries[i].0 =~= key
 }
 
@@ -223,7 +223,7 @@ pub open spec fn spec_key_exists(entries: Seq<(Seq<u8>, JsonValueSpec)>, key: Se
 
 /// Spec: an exec JsonValue matches a spec JsonValueSpec given the input bytes.
 /// This is the core correctness relation that the parser must satisfy.
-pub open spec fn value_matches_spec(v: JsonValue, s: JsonValueSpec, input: Seq<u8>) -> bool
+pub(crate) open spec fn value_matches_spec(v: JsonValue, s: JsonValueSpec, input: Seq<u8>) -> bool
     decreases v,
 {
     match (v, s) {
@@ -258,7 +258,7 @@ pub open spec fn value_matches_spec(v: JsonValue, s: JsonValueSpec, input: Seq<u
 /// Since our tokenizer already strips whitespace, this just means:
 /// parse a single value that consumes ALL tokens.
 /// Uses tokens.len() as fuel (sufficient for any well-formed input).
-pub open spec fn spec_parse_json(input: Seq<u8>, tokens: Seq<Token>) -> Option<JsonValueSpec> {
+pub(crate) open spec fn spec_parse_json(input: Seq<u8>, tokens: Seq<Token>) -> Option<JsonValueSpec> {
     match spec_parse_value(input, tokens, 0, tokens.len()) {
         Some((val, next)) => if next == tokens.len() { Some(val) } else { None },
         None => None,

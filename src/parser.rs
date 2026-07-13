@@ -34,7 +34,7 @@ pub enum ParseError {
     DuplicateKey { first_pos: usize, second_pos: usize },
 }
 
-pub enum ParseResult {
+pub(crate) enum ParseResult {
     Ok { value: JsonValue, next: usize },
     Err { err: ParseError },
 }
@@ -98,7 +98,7 @@ fn decode_string_token(input: &[u8], start: usize, end: usize) -> (result: Decod
 }
 
 /// Parse a JSON value. `input` is the raw source bytes (needed for string decoding).
-pub fn parse_value(input: &[u8], tokens: &[Token], idx: usize, gas: usize) -> (result: ParseResult)
+pub(crate) fn parse_value(input: &[u8], tokens: &[Token], idx: usize, gas: usize) -> (result: ParseResult)
     requires
         idx <= tokens@.len(),
         forall|i: int| #![auto] 0 <= i && i < tokens@.len() ==>
@@ -280,7 +280,7 @@ fn parse_array_body(input: &[u8], tokens: &[Token], cur_start: usize, gas: usize
 }
 
 /// Spec: all decoded keys in entries are pairwise distinct
-pub open spec fn keys_are_distinct(entries: Seq<ObjectEntry>) -> bool {
+pub(crate) open spec fn keys_are_distinct(entries: Seq<ObjectEntry>) -> bool {
     forall|i: int, j: int|
         #![auto]
         0 <= i && i < j && j < entries.len()

@@ -15,7 +15,7 @@ verus! {
 
 /// Lemma: if spec_parse_value succeeds with fuel `f`, it returns the same result
 /// with any fuel `f' >= f`.
-pub proof fn lemma_parse_value_fuel_mono(input: Seq<u8>, tokens: Seq<Token>, idx: nat, f: nat, f2: nat)
+pub(crate) proof fn lemma_parse_value_fuel_mono(input: Seq<u8>, tokens: Seq<Token>, idx: nat, f: nat, f2: nat)
     requires
         f <= f2,
         spec_parse_value(input, tokens, idx, f) is Some,
@@ -41,7 +41,7 @@ pub proof fn lemma_parse_value_fuel_mono(input: Seq<u8>, tokens: Seq<Token>, idx
 }
 
 /// Lemma: fuel monotonicity for spec_parse_array.
-pub proof fn lemma_parse_array_fuel_mono(input: Seq<u8>, tokens: Seq<Token>, idx: nat, f: nat, f2: nat)
+pub(crate) proof fn lemma_parse_array_fuel_mono(input: Seq<u8>, tokens: Seq<Token>, idx: nat, f: nat, f2: nat)
     requires
         f <= f2,
         spec_parse_array(input, tokens, idx, f) is Some,
@@ -59,7 +59,7 @@ pub proof fn lemma_parse_array_fuel_mono(input: Seq<u8>, tokens: Seq<Token>, idx
 }
 
 /// Lemma: fuel monotonicity for spec_parse_array_elements.
-pub proof fn lemma_parse_array_elements_fuel_mono(
+pub(crate) proof fn lemma_parse_array_elements_fuel_mono(
     input: Seq<u8>, tokens: Seq<Token>, idx: nat, acc: Seq<JsonValueSpec>, f: nat, f2: nat,
 )
     requires
@@ -91,7 +91,7 @@ pub proof fn lemma_parse_array_elements_fuel_mono(
 }
 
 /// Lemma: fuel monotonicity for spec_parse_object.
-pub proof fn lemma_parse_object_fuel_mono(input: Seq<u8>, tokens: Seq<Token>, idx: nat, f: nat, f2: nat)
+pub(crate) proof fn lemma_parse_object_fuel_mono(input: Seq<u8>, tokens: Seq<Token>, idx: nat, f: nat, f2: nat)
     requires
         f <= f2,
         spec_parse_object(input, tokens, idx, f) is Some,
@@ -109,7 +109,7 @@ pub proof fn lemma_parse_object_fuel_mono(input: Seq<u8>, tokens: Seq<Token>, id
 }
 
 /// Lemma: fuel monotonicity for spec_parse_object_members.
-pub proof fn lemma_parse_object_members_fuel_mono(
+pub(crate) proof fn lemma_parse_object_members_fuel_mono(
     input: Seq<u8>, tokens: Seq<Token>, idx: nat, acc: Seq<(Seq<u8>, JsonValueSpec)>, f: nat, f2: nat,
 )
     requires

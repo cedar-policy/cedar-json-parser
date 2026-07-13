@@ -11,71 +11,71 @@ verus! {
 // =============================================================================
 
 // --- Whitespace ---
-pub open spec fn SPACE() -> u8 { 0x20 }
-pub open spec fn TAB() -> u8 { 0x09 }
-pub open spec fn NEWLINE() -> u8 { 0x0A }
-pub open spec fn CR() -> u8 { 0x0D }
+pub(crate) open spec fn SPACE() -> u8 { 0x20 }
+pub(crate) open spec fn TAB() -> u8 { 0x09 }
+pub(crate) open spec fn NEWLINE() -> u8 { 0x0A }
+pub(crate) open spec fn CR() -> u8 { 0x0D }
 
 // --- Structural (JSON) ---
-pub open spec fn QUOTE() -> u8 { 0x22 }
-pub open spec fn COMMA() -> u8 { 0x2C }
-pub open spec fn COLON() -> u8 { 0x3A }
-pub open spec fn LBRACKET() -> u8 { 0x5B }
-pub open spec fn RBRACKET() -> u8 { 0x5D }
-pub open spec fn LBRACE() -> u8 { 0x7B }
-pub open spec fn RBRACE() -> u8 { 0x7D }
+pub(crate) open spec fn QUOTE() -> u8 { 0x22 }
+pub(crate) open spec fn COMMA() -> u8 { 0x2C }
+pub(crate) open spec fn COLON() -> u8 { 0x3A }
+pub(crate) open spec fn LBRACKET() -> u8 { 0x5B }
+pub(crate) open spec fn RBRACKET() -> u8 { 0x5D }
+pub(crate) open spec fn LBRACE() -> u8 { 0x7B }
+pub(crate) open spec fn RBRACE() -> u8 { 0x7D }
 
 // --- Escape-related ---
-pub open spec fn BACKSLASH() -> u8 { 0x5C }
-pub open spec fn SLASH() -> u8 { 0x2F }
-pub open spec fn BACKSPACE() -> u8 { 0x08 }
-pub open spec fn FORMFEED() -> u8 { 0x0C }
+pub(crate) open spec fn BACKSLASH() -> u8 { 0x5C }
+pub(crate) open spec fn SLASH() -> u8 { 0x2F }
+pub(crate) open spec fn BACKSPACE() -> u8 { 0x08 }
+pub(crate) open spec fn FORMFEED() -> u8 { 0x0C }
 
 // --- Arithmetic / number-related ---
-pub open spec fn DASH() -> u8 { 0x2D }
-pub open spec fn PLUS() -> u8 { 0x2B }
-pub open spec fn DOT() -> u8 { 0x2E }
-pub open spec fn ZERO() -> u8 { 0x30 }
-pub open spec fn NINE() -> u8 { 0x39 }
+pub(crate) open spec fn DASH() -> u8 { 0x2D }
+pub(crate) open spec fn PLUS() -> u8 { 0x2B }
+pub(crate) open spec fn DOT() -> u8 { 0x2E }
+pub(crate) open spec fn ZERO() -> u8 { 0x30 }
+pub(crate) open spec fn NINE() -> u8 { 0x39 }
 
 // --- Letters (for keywords and hex) ---
-pub open spec fn UPPER_A() -> u8 { 0x41 }
-pub open spec fn UPPER_E() -> u8 { 0x45 }
-pub open spec fn UPPER_F() -> u8 { 0x46 }
-pub open spec fn LOWER_A() -> u8 { 0x61 }
-pub open spec fn LOWER_B() -> u8 { 0x62 }
-pub open spec fn LOWER_E() -> u8 { 0x65 }
-pub open spec fn LOWER_F() -> u8 { 0x66 }
-pub open spec fn LOWER_L() -> u8 { 0x6C }
-pub open spec fn LOWER_N() -> u8 { 0x6E }
-pub open spec fn LOWER_R() -> u8 { 0x72 }
-pub open spec fn LOWER_S() -> u8 { 0x73 }
-pub open spec fn LOWER_T() -> u8 { 0x74 }
-pub open spec fn LOWER_U() -> u8 { 0x75 }
+pub(crate) open spec fn UPPER_A() -> u8 { 0x41 }
+pub(crate) open spec fn UPPER_E() -> u8 { 0x45 }
+pub(crate) open spec fn UPPER_F() -> u8 { 0x46 }
+pub(crate) open spec fn LOWER_A() -> u8 { 0x61 }
+pub(crate) open spec fn LOWER_B() -> u8 { 0x62 }
+pub(crate) open spec fn LOWER_E() -> u8 { 0x65 }
+pub(crate) open spec fn LOWER_F() -> u8 { 0x66 }
+pub(crate) open spec fn LOWER_L() -> u8 { 0x6C }
+pub(crate) open spec fn LOWER_N() -> u8 { 0x6E }
+pub(crate) open spec fn LOWER_R() -> u8 { 0x72 }
+pub(crate) open spec fn LOWER_S() -> u8 { 0x73 }
+pub(crate) open spec fn LOWER_T() -> u8 { 0x74 }
+pub(crate) open spec fn LOWER_U() -> u8 { 0x75 }
 
 // =============================================================================
 // Character classification specs
 // =============================================================================
 
 /// Spec: byte is an ASCII digit '0'-'9'
-pub open spec fn spec_is_ascii_digit(b: u8) -> bool {
+pub(crate) open spec fn spec_is_ascii_digit(b: u8) -> bool {
     ZERO() <= b && b <= NINE()
 }
 
 /// Spec: byte is a hex digit (0-9, a-f, A-F)
-pub open spec fn spec_is_hex_digit(b: u8) -> bool {
+pub(crate) open spec fn spec_is_hex_digit(b: u8) -> bool {
     (ZERO() <= b && b <= NINE())
     || (LOWER_A() <= b && b <= LOWER_F())
     || (UPPER_A() <= b && b <= UPPER_F())
 }
 
 /// Spec: byte is JSON whitespace (RFC 8259 §2: space, tab, newline, carriage return)
-pub open spec fn spec_is_whitespace(b: u8) -> bool {
+pub(crate) open spec fn spec_is_whitespace(b: u8) -> bool {
     b == SPACE() || b == TAB() || b == NEWLINE() || b == CR()
 }
 
 /// Spec: byte is a valid simple escape character after the backslash (RFC 8259 §7)
-pub open spec fn spec_is_simple_escape(b: u8) -> bool {
+pub(crate) open spec fn spec_is_simple_escape(b: u8) -> bool {
     b == QUOTE()
     || b == BACKSLASH()
     || b == SLASH()
@@ -88,7 +88,7 @@ pub open spec fn spec_is_simple_escape(b: u8) -> bool {
 
 /// Spec: value of a hex digit byte (0-15), or 0 if not a hex digit.
 /// Only meaningful when called on bytes known to be hex digits.
-pub open spec fn spec_hex_val(b: u8) -> u8 {
+pub(crate) open spec fn spec_hex_val(b: u8) -> u8 {
     if ZERO() <= b && b <= NINE() { (b - ZERO()) as u8 }
     else if LOWER_A() <= b && b <= LOWER_F() { (b - LOWER_A() + 10) as u8 }
     else if UPPER_A() <= b && b <= UPPER_F() { (b - UPPER_A() + 10) as u8 }
@@ -96,7 +96,7 @@ pub open spec fn spec_hex_val(b: u8) -> u8 {
 }
 
 /// Spec: 4 consecutive bytes starting at `pos` are all hex digits.
-pub open spec fn spec_is_hex_quad(input: Seq<u8>, pos: nat) -> bool {
+pub(crate) open spec fn spec_is_hex_quad(input: Seq<u8>, pos: nat) -> bool {
     pos + 4 <= input.len()
     && spec_is_hex_digit(input[pos as int])
     && spec_is_hex_digit(input[(pos + 1) as int])
@@ -117,43 +117,43 @@ pub open spec fn spec_is_hex_quad(input: Seq<u8>, pos: nat) -> bool {
 // --- Unicode code point boundaries ---
 
 /// Maximum valid Unicode code point (U+10FFFF).
-pub open spec fn MAX_CODE_POINT() -> u32 { 0x10FFFF }
+pub(crate) open spec fn MAX_CODE_POINT() -> u32 { 0x10FFFF }
 
 /// First code point in the high surrogate range (U+D800).
-pub open spec fn HIGH_SURROGATE_MIN() -> u32 { 0xD800 }
+pub(crate) open spec fn HIGH_SURROGATE_MIN() -> u32 { 0xD800 }
 
 /// Last code point in the high surrogate range (U+DBFF).
-pub open spec fn HIGH_SURROGATE_MAX() -> u32 { 0xDBFF }
+pub(crate) open spec fn HIGH_SURROGATE_MAX() -> u32 { 0xDBFF }
 
 /// First code point in the low surrogate range (U+DC00).
-pub open spec fn LOW_SURROGATE_MIN() -> u32 { 0xDC00 }
+pub(crate) open spec fn LOW_SURROGATE_MIN() -> u32 { 0xDC00 }
 
 /// Last code point in the low surrogate range (U+DFFF).
-pub open spec fn LOW_SURROGATE_MAX() -> u32 { 0xDFFF }
+pub(crate) open spec fn LOW_SURROGATE_MAX() -> u32 { 0xDFFF }
 
 /// Spec: code point is a high surrogate (U+D800..U+DBFF).
-pub open spec fn is_high_surrogate(cp: u32) -> bool {
+pub(crate) open spec fn is_high_surrogate(cp: u32) -> bool {
     HIGH_SURROGATE_MIN() <= cp && cp <= HIGH_SURROGATE_MAX()
 }
 
 /// Spec: code point is a low surrogate (U+DC00..U+DFFF).
-pub open spec fn is_low_surrogate(cp: u32) -> bool {
+pub(crate) open spec fn is_low_surrogate(cp: u32) -> bool {
     LOW_SURROGATE_MIN() <= cp && cp <= LOW_SURROGATE_MAX()
 }
 
 /// Spec: code point is any surrogate (high or low).
-pub open spec fn is_surrogate(cp: u32) -> bool {
+pub(crate) open spec fn is_surrogate(cp: u32) -> bool {
     HIGH_SURROGATE_MIN() <= cp && cp <= LOW_SURROGATE_MAX()
 }
 
 /// A Unicode scalar value: a code point that is not a surrogate (RFC 3629 §3).
-pub open spec fn is_unicode_scalar(cp: u32) -> bool {
+pub(crate) open spec fn is_unicode_scalar(cp: u32) -> bool {
     cp <= MAX_CODE_POINT() && !is_surrogate(cp)
 }
 
 /// Combine a surrogate pair into a supplementary code point (RFC 8259 §7).
 /// Formula: (hi - 0xD800) * 0x400 + (lo - 0xDC00) + 0x10000
-pub open spec fn surrogate_pair_value(hi: u32, lo: u32) -> u32
+pub(crate) open spec fn surrogate_pair_value(hi: u32, lo: u32) -> u32
     recommends is_high_surrogate(hi) && is_low_surrogate(lo),
 {
     (0x10000u32 + (hi - HIGH_SURROGATE_MIN()) * 0x400 + (lo - LOW_SURROGATE_MIN())) as u32
@@ -161,7 +161,7 @@ pub open spec fn surrogate_pair_value(hi: u32, lo: u32) -> u32
 
 /// Spec: the UTF-8 byte encoding of a single code point.
 /// This is the readable, mathematical definition.
-pub open spec fn spec_encode_code_point(cp: u32) -> Seq<u8>
+pub(crate) open spec fn spec_encode_code_point(cp: u32) -> Seq<u8>
     recommends is_unicode_scalar(cp),
 {
     if cp <= 0x7F {
@@ -188,7 +188,7 @@ pub open spec fn spec_encode_code_point(cp: u32) -> Seq<u8>
 }
 
 /// Spec: the encoded length for a code point.
-pub open spec fn spec_encoded_len(cp: u32) -> nat
+pub(crate) open spec fn spec_encoded_len(cp: u32) -> nat
     recommends is_unicode_scalar(cp),
 {
     if cp <= 0x7F { 1 }
@@ -200,7 +200,7 @@ pub open spec fn spec_encoded_len(cp: u32) -> nat
 /// Spec: decode a UTF-8 byte sequence back into a code point.
 /// Assumes the input is a well-formed single-character UTF-8 encoding.
 /// Returns 0 for malformed input (only meaningful when called on valid encodings).
-pub open spec fn spec_decode_code_point(bytes: Seq<u8>) -> u32 {
+pub(crate) open spec fn spec_decode_code_point(bytes: Seq<u8>) -> u32 {
     if bytes.len() == 1 {
         bytes[0] as u32
     } else if bytes.len() == 2 {
@@ -369,7 +369,7 @@ proof fn lemma_decode_preserves_scalar(cp: u32)
 
 /// Spec: decode 4 hex digit bytes starting at `pos` into a u16.
 /// Interprets input[pos..pos+4] as a big-endian hex number.
-pub open spec fn spec_decode_hex4(input: Seq<u8>, pos: nat) -> u16
+pub(crate) open spec fn spec_decode_hex4(input: Seq<u8>, pos: nat) -> u16
     recommends pos + 4 <= input.len(),
 {
     (
@@ -385,7 +385,7 @@ pub open spec fn spec_decode_hex4(input: Seq<u8>, pos: nat) -> u16
 // =============================================================================
 
 /// Exec: check if byte is an ASCII digit
-pub fn is_ascii_digit(b: u8) -> (result: bool)
+pub(crate) fn is_ascii_digit(b: u8) -> (result: bool)
     ensures
         result == spec_is_ascii_digit(b),
 {
@@ -393,7 +393,7 @@ pub fn is_ascii_digit(b: u8) -> (result: bool)
 }
 
 /// Exec: check if byte is a hex digit
-pub fn is_hex_digit(b: u8) -> (result: bool)
+pub(crate) fn is_hex_digit(b: u8) -> (result: bool)
     ensures
         result == spec_is_hex_digit(b),
 {
@@ -401,7 +401,7 @@ pub fn is_hex_digit(b: u8) -> (result: bool)
 }
 
 /// Exec: check if byte is JSON whitespace (space, tab, newline, carriage return)
-pub fn is_whitespace(b: u8) -> (result: bool)
+pub(crate) fn is_whitespace(b: u8) -> (result: bool)
     ensures
         result == spec_is_whitespace(b),
 {
@@ -409,7 +409,7 @@ pub fn is_whitespace(b: u8) -> (result: bool)
 }
 
 /// Exec: check if byte is a valid simple escape character
-pub fn is_simple_escape(b: u8) -> (result: bool)
+pub(crate) fn is_simple_escape(b: u8) -> (result: bool)
     ensures
         result == spec_is_simple_escape(b),
 {
@@ -418,7 +418,7 @@ pub fn is_simple_escape(b: u8) -> (result: bool)
 }
 
 /// Exec: hex digit to value (0-15). Returns None if not a hex digit.
-pub fn hex_val(b: u8) -> (result: Option<u8>)
+pub(crate) fn hex_val(b: u8) -> (result: Option<u8>)
     ensures
         match result {
             Some(v) => v <= 15 && v == spec_hex_val(b) && spec_is_hex_digit(b),
@@ -433,7 +433,7 @@ pub fn hex_val(b: u8) -> (result: Option<u8>)
 
 /// Exec: append the UTF-8 encoding of `cp` to `out`.
 /// Proven to produce exactly the bytes specified by `spec_encode_code_point`.
-pub fn encode_code_point(cp: u32, out: &mut Vec<u8>)
+pub(crate) fn encode_code_point(cp: u32, out: &mut Vec<u8>)
     requires
         is_unicode_scalar(cp),
     ensures
@@ -457,7 +457,7 @@ pub fn encode_code_point(cp: u32, out: &mut Vec<u8>)
 }
 
 /// Exec: decode 4 hex digit bytes into a u16.
-pub fn decode_hex4(input: &[u8], pos: usize) -> (result: Option<u16>)
+pub(crate) fn decode_hex4(input: &[u8], pos: usize) -> (result: Option<u16>)
     requires
         pos + 4 <= input@.len(),
     ensures

@@ -4,14 +4,22 @@
 //!
 //! This crate provides a single entry point, [`parse_json`], which tokenizes and parses
 //! a byte slice as a JSON document. The implementation is proven correct against the
-//! RFC 8259 grammar using Verus's SMT-backed verification.
+//! RFC 8259 grammar using Verus's SMT-backed verification. When reading the RFC 8259 specification,
+//! we interpret the following "SHOULD" in "the names within an object SHOULD be unique" as a
+//! "MUST"; we enforce uniqueness of keys in objects.
 //!
 //! ## Verified properties
 //!
 //! - **Soundness**: if `parse_json` returns `Ok`, the result faithfully represents the
 //!   input according to the RFC 8259 grammar (correct tokenization, escape decoding,
 //!   UTF-8 validation, duplicate key rejection).
-//! - **Safety**: all array accesses are proven in-bounds; no panics on any input.
+//! - **Safety**: the parser never panics on arbitrary inputs, unless an out-of-memory occurs.
+//! - **Tokenizer completeness**: given a valid string of JSON tokens, the tokenizer will generate
+//!   Ok(..) with a list of tokens.
+//!
+//! ## Unverified
+//! - **Parser completeness**: we do not have a proof that the parser will succeed for every valid
+//! input string.
 //!
 //! ## Usage
 //!
@@ -40,6 +48,6 @@ mod parser;
 pub(crate) mod tokenizer;
 pub(crate) mod utf8_validation;
 
-pub use parser::{parse_json, JsonValue, ObjectEntry, ParseError, ParseJsonError};
 pub use json_spec::JsonValueSpec;
+pub use parser::{parse_json, JsonValue, ObjectEntry, ParseError, ParseJsonError};
 pub use tokenizer::{Token, TokenKind, TokenizeError};

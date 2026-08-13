@@ -217,6 +217,8 @@ Legend:
 
   `consume_number` is proven to return Ok only when `spec_is_valid_json_number`
   holds (which asserts `spec_number_end(input, start) == Some(end)`).
+  Completeness: `consume_number` returns Err only when
+  `spec_number_end(input@, pos as nat) is None`.
 
 >    decimal-point = %x2E       ; .
 
@@ -290,6 +292,8 @@ Legend:
   - Closing quote: `token_content_valid` for String asserts
     `input[(token.end - 1) as int] == QUOTE()` (0x22).
   - `consume_string` postcondition: `input[(end - 1) as int] == QUOTE()`.
+  - Completeness: `consume_string` returns Err only when
+    `spec_string_end(input@, pos as nat) is None`.
 
 > All Unicode characters may be placed within the
 > quotation marks, except for the characters that MUST be escaped:
@@ -513,13 +517,19 @@ N/A — informational/interoperability guidance.
 
 ⚠️ PARTIAL
   - SOUNDNESS proven: if `parse_json` returns Ok, the result matches `spec_parse_json`.
-  - COMPLETENESS not proven: we don't prove that every valid JSON input causes
-    `parse_json` to return Ok (as opposed to Err).
+  - TOKENIZER COMPLETENESS proven: `tokenize_all` returns `Err` only when
+    `!spec_tokenizable(input@)` — i.e., the input is genuinely not a valid
+    sequence of JSON tokens. This means the tokenizer accepts all tokenizable
+    inputs and rejects only invalid ones.
+  - PARSER COMPLETENESS not proven: we don't yet prove that every well-formed
+    token stream causes `parse_value` to return Ok (as opposed to Err).
   - The `ParseResult::Err` postcondition is simply `true` (no guarantees on failure).
-  - To prove completeness would require:
-    (a) Proving tokenizer completeness (tokenize_all returns Ok for valid input)
+  - Remaining work to fully prove this requirement:
+    (a) ✅ DONE: Tokenizer completeness (tokenize_all returns Ok for valid input)
     (b) Proving fuel sufficiency (spec_parse_value with sufficient fuel always
         returns Some for well-formed token streams)
+    (c) Proving parser completeness (parse_value returns Ok when spec_parse_value
+        returns Some)
 
 > A JSON parser MAY accept non-JSON forms or extensions.
 
@@ -591,16 +601,21 @@ Fully proven (✅):
 Partial (⚠️):
 
   1. Completeness — accept all valid texts (§9)
-     - Soundness (Ok → correct) is proven. Completeness (valid → Ok) is not.
-     - Severity: MEDIUM — meaningful property, requires fuel sufficiency proof
-       and tokenizer completeness proof.
-     - Fix: Prove fuel determinism (sufficient fuel always exists for valid
-       token streams). Then prove tokenize_all returns Ok for RFC-valid input.
-       Then prove parse_value returns Ok when spec_parse_value returns Some.
+     - Soundness (Ok → correct) is proven. Full completeness (valid → Ok) is not.
+     - Tokenizer completeness IS proven: `tokenize_all` returns `Err` only when
+       `!spec_tokenizable(input@)`. Spec functions `spec_next_token`,
+       `spec_string_end`, `spec_number_end` define what constitutes a valid token
+       stream, and all error paths in the tokenizer are proven to correspond to
+       spec failures.
+     - Severity: LOW-MEDIUM — the hard part (tokenizer completeness) is done.
+       Remaining: fuel sufficiency + parser completeness.
+     - Fix: Prove `spec_parse_value(input, tokens, 0, tokens.len())` returns
+       Some for any well-formed token stream. Then prove `parse_value` returns
+       Ok when `spec_parse_value` returns Some.
 
   2. Fuel / nesting depth sufficiency (§9)
      - `gas = tokens.len()` is used as fuel. Not proven that this is always
        sufficient for all valid inputs.
-     - Severity: MEDIUM — subsumed by gap 1.
+     - Severity: LOW-MEDIUM — subsumed by gap 1.
      - Fix: Prove `spec_parse_value(input, tokens, 0, tokens.len())` returns
        Some for any well-formed token stream.

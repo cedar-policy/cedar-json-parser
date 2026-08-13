@@ -214,7 +214,7 @@ pub open spec fn spec_parse_object_members(
 
 /// Spec: does a key already exist in the accumulated entries?
 pub open spec fn spec_key_exists(entries: Seq<(Seq<u8>, JsonValueSpec)>, key: Seq<u8>) -> bool {
-    exists|i: int| 0 <= i && i < entries.len() && entries[i].0 =~= key
+    exists|i: int| #![auto] 0 <= i && i < entries.len() && entries[i].0 =~= key
 }
 
 // =============================================================================

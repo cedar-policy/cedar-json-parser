@@ -1,5 +1,6 @@
 use crate::byte_specs::*;
 use vstd::prelude::*;
+use vstd::utf8::*;
 
 verus! {
 
@@ -469,7 +470,7 @@ pub(crate) fn consume_number(input: &[u8], pos: usize) -> (result: NumberResult)
                 &&& spec_is_valid_json_number(input@, pos as nat, end as nat)
                 &&& forall|k: int| pos <= k < end ==> spec_is_number_byte(#[trigger] input@[k])
             },
-            NumberResult::Err { .. } => true,
+            NumberResult::Err { .. } => spec_number_end(input@, pos as nat) is None,
         },
 {
     let mut cur = pos;
@@ -519,6 +520,58 @@ pub(crate) enum StringResult {
     InvalidUtf8 { pos: usize },
 }
 
+/// Spec: scanning the string body from position `pos`, can we reach a valid
+/// closing quote? Returns `Some(end)` where `input[end-1] == '"'` and all
+/// bytes in between are valid string content (no unescaped control chars,
+/// valid escape sequences, valid UTF-8 for unescaped content).
+///
+/// This mirrors the loop structure of `consume_string`:
+/// - 0x22 → closing quote found, return pos+1
+/// - 0x5C → escape: simple or \uXXXX (with optional surrogate pair check skipped
+///          at tokenizer level — tokenizer only checks structure, not semantics)
+/// - < 0x20 → invalid (control char)
+/// - otherwise → valid UTF-8 char, advance by its length
+pub open spec fn spec_string_end(input: Seq<u8>, pos: nat) -> Option<nat>
+    recommends pos <= input.len(),
+    decreases input.len() - pos,
+{
+    if pos >= input.len() {
+        None // unterminated
+    } else if input[pos as int] == QUOTE() {
+        Some(pos + 1) // closing quote
+    } else if input[pos as int] == BACKSLASH() {
+        if pos + 1 >= input.len() {
+            None // truncated escape
+        } else if spec_is_simple_escape(input[(pos + 1) as int]) {
+            spec_string_end(input, pos + 2)
+        } else if input[(pos + 1) as int] == LOWER_U() {
+            if pos + 6 > input.len() {
+                None
+            } else if !spec_is_hex_quad(input, (pos + 2) as nat) {
+                None
+            } else {
+                spec_string_end(input, pos + 6)
+            }
+        } else {
+            None // unknown escape
+        }
+    } else if input[pos as int] < 0x20 {
+        None // control character
+    } else {
+        // Unescaped: must be valid UTF-8
+        if !valid_first_scalar(input.subrange(pos as int, input.len() as int)) {
+            None
+        } else {
+            let len = length_of_first_scalar(input.subrange(pos as int, input.len() as int));
+            if len <= 0 {
+                None
+            } else {
+                spec_string_end(input, (pos + len) as nat)
+            }
+        }
+    }
+}
+
 /// Consume a JSON string literal body (after opening '"').
 /// Returns the position just after the closing '"'.
 /// Validates that unescaped content is valid UTF-8.
@@ -531,14 +584,18 @@ pub(crate) fn consume_string(input: &[u8], pos: usize) -> (result: StringResult)
                 &&& pos <= end && end <= input@.len()
                 &&& end >= 1
                 &&& input@[(end - 1) as int] == QUOTE()
+                &&& spec_string_end(input@, pos as nat) == Some(end as nat)
             },
-            _ => true,
+            _ => spec_string_end(input@, pos as nat) is None,
         },
 {
     let mut i = pos;
     while i < input.len()
         invariant
             pos <= i <= input.len(),
+            // Key invariant: spec_string_end from the original pos equals
+            // spec_string_end from the current position i
+            spec_string_end(input@, pos as nat) == spec_string_end(input@, i as nat),
         decreases input.len() - i,
     {
         let b = input[i];
@@ -599,7 +656,10 @@ pub(crate) fn consume_keyword(input: &[u8], pos: usize, keyword: &[u8]) -> (resu
                 && end <= input@.len()
                 && input@.subrange(pos as int, end as int) =~= keyword@
             },
-            None => true,
+            None => {
+                pos + keyword@.len() > input@.len()
+                || !(input@.subrange(pos as int, (pos + keyword@.len()) as int) =~= keyword@)
+            },
         },
 {
     if input.len() - pos < keyword.len() {
@@ -722,6 +782,90 @@ pub open spec fn token_content_valid(token: Token, input: Seq<u8>) -> bool {
 // get_token: the main tokenizer dispatch
 // =============================================================================
 
+/// Spec: byte can start a valid JSON token.
+/// This enumerates every byte that `get_token` dispatches on.
+pub open spec fn spec_can_start_token(b: u8) -> bool {
+    b == LBRACKET()   // [
+    || b == RBRACKET()   // ]
+    || b == LBRACE()     // {
+    || b == RBRACE()     // }
+    || b == COMMA()      // ,
+    || b == COLON()      // :
+    || b == LOWER_T()    // t (true)
+    || b == LOWER_F()    // f (false)
+    || b == LOWER_N()    // n (null)
+    || b == DASH()       // - (number)
+    || spec_is_ascii_digit(b) // 0-9 (number)
+    || b == QUOTE()      // " (string)
+}
+
+/// Spec: result of attempting to find a token at position `pos`.
+/// Returns Some((start, end)) if a valid token can be produced, None otherwise.
+/// `start` is the first non-whitespace position >= pos.
+pub open spec fn spec_next_token(input: Seq<u8>, pos: nat) -> Option<(nat, nat)>
+    recommends pos <= input.len(),
+{
+    let start = spec_skip_whitespace(input, pos);
+    if start >= input.len() {
+        None // EOF — not an error, just no token
+    } else {
+        let b = input[start as int];
+        // Structural: single-byte tokens always succeed
+        if b == LBRACKET() || b == RBRACKET() || b == LBRACE() || b == RBRACE()
+           || b == COMMA() || b == COLON() {
+            Some((start, start + 1))
+        }
+        // Keywords
+        else if b == LOWER_T() {
+            if start + 4 <= input.len()
+               && input[(start + 1) as int] == LOWER_R()
+               && input[(start + 2) as int] == LOWER_U()
+               && input[(start + 3) as int] == LOWER_E() {
+                Some((start, start + 4))
+            } else {
+                None
+            }
+        } else if b == LOWER_F() {
+            if start + 5 <= input.len()
+               && input[(start + 1) as int] == LOWER_A()
+               && input[(start + 2) as int] == LOWER_L()
+               && input[(start + 3) as int] == LOWER_S()
+               && input[(start + 4) as int] == LOWER_E() {
+                Some((start, start + 5))
+            } else {
+                None
+            }
+        } else if b == LOWER_N() {
+            if start + 4 <= input.len()
+               && input[(start + 1) as int] == LOWER_U()
+               && input[(start + 2) as int] == LOWER_L()
+               && input[(start + 3) as int] == LOWER_L() {
+                Some((start, start + 4))
+            } else {
+                None
+            }
+        }
+        // Numbers
+        else if b == DASH() || spec_is_ascii_digit(b) {
+            match spec_number_end(input, start) {
+                Some(end) => Some((start, end)),
+                None => None,
+            }
+        }
+        // Strings
+        else if b == QUOTE() {
+            match spec_string_end(input, start + 1) {
+                Some(end) => Some((start, end)),
+                None => None,
+            }
+        }
+        // No valid token starts with this byte
+        else {
+            None
+        }
+    }
+}
+
 /// Consume one JSON token from `input` starting at position `pos`.
 ///
 /// Properties proven:
@@ -737,24 +881,38 @@ pub(crate) fn get_token(input: &[u8], pos: usize) -> (result: TokenResult)
     ensures
         match result {
             TokenResult::Ok { token } => {
-                token.end > pos
-                && token.start >= pos
-                && token.end <= input@.len()
-                && token.end > token.start
-                && token_content_valid(token, input@)
+                &&& token.end > pos // progress
+                &&& token.end <= input@.len() // bounded by end of input
+                &&& token.end > token.start // non-empty
+                &&& token_content_valid(token, input@)
+                &&& token.start >= pos // non-overlapping
                 // Bytes between pos and token.start are all whitespace
-                && (forall|k: int| pos <= k < token.start ==>
+                &&& (forall|k: int| pos <= k < token.start ==>
                     spec_is_whitespace(#[trigger] input@[k]))
+                &&& spec_next_token(input@, pos as nat) == Some((token.start as nat, token.end as nat))
             },
             TokenResult::Eof => {
                 // All remaining bytes from pos are whitespace (nothing left but space)
-                forall|k: int| pos <= k < input@.len() ==>
+                &&& forall|k: int| pos <= k < input@.len() ==>
                     spec_is_whitespace(#[trigger] input@[k])
+                &&& spec_next_token(input@, pos as nat) is None
             },
-            TokenResult::ErrUnexpectedEof { .. } => true,
-            TokenResult::ErrInvalidNumber { .. } => true,
-            TokenResult::ErrInvalidEscape { .. } => true,
-            TokenResult::ErrUnexpectedToken { .. } => true,
+            TokenResult::ErrUnexpectedEof { .. } => {
+                &&& spec_next_token(input@, pos as nat) is None
+                &&& spec_skip_whitespace(input@, pos as nat) < input@.len()
+            },
+            TokenResult::ErrInvalidNumber { .. } => {
+                &&& spec_next_token(input@, pos as nat) is None
+                &&& spec_skip_whitespace(input@, pos as nat) < input@.len()
+            },
+            TokenResult::ErrInvalidEscape { .. } => {
+                &&& spec_next_token(input@, pos as nat) is None
+                &&& spec_skip_whitespace(input@, pos as nat) < input@.len()
+            },
+            TokenResult::ErrUnexpectedToken { .. } => {
+                &&& spec_next_token(input@, pos as nat) is None
+                &&& spec_skip_whitespace(input@, pos as nat) < input@.len()
+            },
         },
 {
     proof {
@@ -858,6 +1016,32 @@ pub(crate) fn get_token(input: &[u8], pos: usize) -> (result: TokenResult)
 // tokenize_all: repeated get_token proving non-overlapping and termination
 // =============================================================================
 
+/// Spec: the input is fully tokenizable starting from `pos`.
+/// This means repeatedly calling spec_next_token from `pos` reaches EOF
+/// without encountering an error (None when not at EOF).
+pub open spec fn spec_tokenizable_from(input: Seq<u8>, pos: nat) -> bool
+    recommends pos <= input.len(),
+    decreases input.len() - pos,
+{
+    let start = spec_skip_whitespace(input, pos);
+    if start >= input.len() {
+        true // EOF — success
+    } else {
+        match spec_next_token(input, pos) {
+            Some((_, end)) => {
+                end > pos && end <= input.len()
+                && spec_tokenizable_from(input, end)
+            },
+            None => false, // error — not tokenizable
+        }
+    }
+}
+
+/// Spec: the entire input is a valid sequence of JSON tokens.
+pub open spec fn spec_tokenizable(input: Seq<u8>) -> bool {
+    spec_tokenizable_from(input, 0)
+}
+
 /// Error from tokenization, preserving both kind and position.
 pub enum TokenizeError {
     UnexpectedEof { pos: usize },
@@ -903,7 +1087,7 @@ pub(crate) fn tokenize_all(input: &[u8]) -> (result: Result<Vec<Token>, Tokenize
                     && k < input@.len()
                     ==> spec_is_whitespace(#[trigger] input@[k])
             },
-            Err(_) => true,
+            Err(_) => !spec_tokenizable(input@),
         },
 {
     let mut tokens: Vec<Token> = Vec::new();
@@ -935,6 +1119,8 @@ pub(crate) fn tokenize_all(input: &[u8]) -> (result: Result<Vec<Token>, Tokenize
                 (if tokens@.len() > 0 { tokens@[tokens@.len() - 1].end as int } else { 0int }) <= k
                 && k < pos
                 ==> spec_is_whitespace(#[trigger] input@[k]),
+            // Completeness: if input is tokenizable, it's still tokenizable from here
+            spec_tokenizable(input@) ==> spec_tokenizable_from(input@, pos as nat),
         decreases input.len() - pos,
     {
         match get_token(input, pos) {

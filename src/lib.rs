@@ -13,17 +13,19 @@
 //! - **Soundness**: if `parse_json` returns `Ok`, the result faithfully represents the
 //!   input according to the RFC 8259 grammar (correct tokenization, escape decoding,
 //!   UTF-8 validation, duplicate key rejection).
-//! - **Safety**: the parser never panics on arbitrary inputs, unless an out-of-memory occurs.
+//! - **Safety**: the parser never panics on arbitrary inputs, unless an out-of-memory or a
+//!   stack overflow occurs. The tokenizer does limit nesting to [`tokenizer::MAX_NESTING_DEPTH`]
+//!   to avoid such cases.
 //! - **Tokenizer completeness**: given a valid string of JSON tokens, the tokenizer will generate
 //!   Ok(..) with a list of tokens.
 //!
 //! ## Unverified
 //! - **Parser completeness**: we do not have a proof that the parser will succeed for every valid
-//! input string.
+//!   input string.
 //!
 //! ## Usage
 //!
-//! ```ignore
+//! ```
 //! use cedar_json_parser::{parse_json, JsonValue};
 //!
 //! let input = br#"{"key": [1, 2, 3]}"#;
@@ -50,4 +52,4 @@ pub(crate) mod utf8_validation;
 
 pub use json_spec::JsonValueSpec;
 pub use parser::{parse_json, JsonValue, ObjectEntry, ParseError, ParseJsonError};
-pub use tokenizer::{Token, TokenKind, TokenizeError};
+pub use tokenizer::{Token, TokenKind, TokenizeError, MAX_NESTING_DEPTH};

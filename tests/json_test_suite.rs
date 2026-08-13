@@ -5,14 +5,16 @@
 //!   n_*  — content MUST be rejected (invalid JSON)
 //!   i_*  — implementation-defined (either accept or reject is fine)
 
-use cedar_json_parser::{parse_json, ParseJsonError, TokenizeError};
+use cedar_json_parser::{parse_json, ParseError, ParseJsonError, TokenizeError};
 use std::fs;
 use std::path::Path;
 
 fn format_error(e: &ParseJsonError) -> String {
     match e {
         ParseJsonError::Tokenize { err } => match err {
-            TokenizeError::UnexpectedEof { pos } => format!("TokenizeError::UnexpectedEof at {pos}"),
+            TokenizeError::UnexpectedEof { pos } => {
+                format!("TokenizeError::UnexpectedEof at {pos}")
+            }
             TokenizeError::InvalidNumber { pos } => {
                 format!("TokenizeError::InvalidNumber at {pos}")
             }
@@ -22,15 +24,18 @@ fn format_error(e: &ParseJsonError) -> String {
             TokenizeError::UnexpectedToken { pos } => {
                 format!("TokenizeError::UnexpectedToken at {pos}")
             }
+            TokenizeError::NestingTooDeep { pos } => {
+                format!("TokenizeError::NestingTooDeep at {pos}")
+            }
         },
         ParseJsonError::Parse { err } => match err {
-            cedar_json_parser::ParseError::UnexpectedToken { pos } => {
+            ParseError::UnexpectedToken { pos } => {
                 format!("ParseError::UnexpectedToken at {pos}")
             }
-            cedar_json_parser::ParseError::InvalidEscape { pos } => {
+            ParseError::InvalidEscape { pos } => {
                 format!("ParseError::InvalidEscape at {pos}")
             }
-            cedar_json_parser::ParseError::DuplicateKey {
+            ParseError::DuplicateKey {
                 first_pos,
                 second_pos,
             } => {
@@ -59,16 +64,14 @@ fn json_test_suite() {
 
 fn json_test_suite_inner() {
     let dir = Path::new(TEST_DATA_DIR);
-    assert!(dir.is_dir(), "Test data directory not found: {TEST_DATA_DIR}");
+    assert!(
+        dir.is_dir(),
+        "Test data directory not found: {TEST_DATA_DIR}"
+    );
 
-    // Files with extreme nesting depth (100K+ levels) that cause stack overflow
-    // in any recursive-descent parser. These are n_ files (must reject) and
-    // i_ files (implementation-defined), so the parser is within its rights to
-    // reject them — it just does so via stack overflow rather than a graceful error.
-    let skip: &[&str] = &[
-        "n_structure_100000_opening_arrays.json",
-        "n_structure_open_array_object.json",
-    ];
+    // No files need to be skipped — deep nesting is rejected gracefully
+    // by the tokenizer's NestingTooDeep error (MAX_NESTING_DEPTH = 1024).
+    let skip: &[&str] = &[];
 
     // y_ files that we intentionally reject because our parser is stricter than
     // the RFC requires. RFC 8259 §4 says keys SHOULD be unique; we enforce MUST.
@@ -81,11 +84,7 @@ fn json_test_suite_inner() {
     let mut entries: Vec<_> = fs::read_dir(dir)
         .expect("failed to read test data directory")
         .filter_map(|e| e.ok())
-        .filter(|e| {
-            e.path()
-                .extension()
-                .map_or(false, |ext| ext == "json")
-        })
+        .filter(|e| e.path().extension().map_or(false, |ext| ext == "json"))
         .collect();
     entries.sort_by_key(|e| e.file_name());
 
@@ -124,7 +123,10 @@ fn json_test_suite_inner() {
                     Ok(_) => y_pass += 1,
                     Err(e) => {
                         y_fail += 1;
-                        failures.push(format!("FAIL (should accept): {name} — {}", format_error(&e)));
+                        failures.push(format!(
+                            "FAIL (should accept): {name} — {}",
+                            format_error(&e)
+                        ));
                     }
                 }
             }

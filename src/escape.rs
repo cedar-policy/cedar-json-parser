@@ -370,6 +370,7 @@ proof fn lemma_decode_fold_surrogate_pair(input: Seq<u8>, start: nat, end: nat)
 /// Postcondition: if `spec_decode(input, i, end)` was `Some(chunk_bytes + rest)`,
 /// then after this call `out` has `chunk_bytes` appended and we return the position
 /// where `rest` starts.
+#[verifier::rlimit(30)]
 fn decode_one_chunk(input: &[u8], i: usize, end: usize, out: &mut Vec<u8>) -> (result: ChunkResult)
     requires
         i < end,

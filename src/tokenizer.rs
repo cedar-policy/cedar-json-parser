@@ -1042,12 +1042,18 @@ pub open spec fn spec_tokenizable(input: Seq<u8>) -> bool {
     spec_tokenizable_from(input, 0)
 }
 
+/// Maximum nesting depth for JSON arrays and objects.
+/// Inputs exceeding this depth are rejected with `NestingTooDeep`.
+/// RFC 8259 §9: "An implementation may set limits on the maximum depth of nesting."
+pub const MAX_NESTING_DEPTH: usize = 1024;
+
 /// Error from tokenization, preserving both kind and position.
 pub enum TokenizeError {
     UnexpectedEof { pos: usize },
     InvalidNumber { pos: usize },
     InvalidEscape { pos: usize },
     UnexpectedToken { pos: usize },
+    NestingTooDeep { pos: usize },
 }
 
 /// Tokenize the entire input, collecting tokens into a Vec.
@@ -1087,15 +1093,18 @@ pub(crate) fn tokenize_all(input: &[u8]) -> (result: Result<Vec<Token>, Tokenize
                     && k < input@.len()
                     ==> spec_is_whitespace(#[trigger] input@[k])
             },
+            Err(TokenizeError::NestingTooDeep { .. }) => true,
             Err(_) => !spec_tokenizable(input@),
         },
 {
     let mut tokens: Vec<Token> = Vec::new();
     let mut pos: usize = 0;
+    let mut depth: usize = 0;
 
     while pos <= input.len()
         invariant
             pos <= input.len(),
+            depth <= MAX_NESTING_DEPTH,
             forall|i: int| 0 <= i && i < tokens@.len() ==> {
                 let t = #[trigger] tokens@[i];
                 t.start < t.end && t.end <= input@.len()
@@ -1126,6 +1135,21 @@ pub(crate) fn tokenize_all(input: &[u8]) -> (result: Result<Vec<Token>, Tokenize
         match get_token(input, pos) {
             TokenResult::Ok { token } => {
                 let new_pos = token.end;
+                match token.kind {
+                    TokenKind::ArrayStart | TokenKind::ObjectStart => {
+                        depth = depth + 1;
+                        if depth > MAX_NESTING_DEPTH {
+                            return Err(TokenizeError::NestingTooDeep { pos: token.start });
+                        }
+                    }
+                    #[allow(clippy::collapsible_match)]
+                    TokenKind::ArrayEnd | TokenKind::ObjectEnd => {
+                        if depth > 0 {
+                            depth = depth - 1;
+                        }
+                    }
+                    _ => {}
+                }
                 tokens.push(token);
                 pos = new_pos;
             }

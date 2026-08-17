@@ -72,6 +72,14 @@ pub open spec fn spec_decode_string_token(input: Seq<u8>, start: nat, end: nat) 
 // The match below dispatches on token kind covering exactly the 7 value
 // alternatives (Null, True, False, Number, String, ArrayStart -> array,
 // ObjectStart -> object). Any other token kind in value position -> None.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-3
+//= type=spec
+//= level=MUST
+//# value = false / null / true / object / array / number / string
+//= https://www.rfc-editor.org/rfc/rfc8259#section-3
+//= type=implication
+//# value = false / null / true / object / array / number / string
 pub open spec fn spec_parse_value(input: Seq<u8>, tokens: Seq<Token>, idx: nat, fuel: nat) -> Option<(JsonValueSpec, nat)>
     decreases fuel, tokens.len() - idx, 2nat,
 {
@@ -103,6 +111,36 @@ pub open spec fn spec_parse_value(input: Seq<u8>, tokens: Seq<Token>, idx: nat, 
 
 /// Spec: parse array elements after '['. Looks for ']' (empty) or value *( ',' value ) ']'.
 /// Returns Some((Array { elements }, next_idx_after_']')) or None.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-5
+//= type=spec
+//= level=MUST
+//# An array structure is represented as square brackets surrounding zero
+//# or more values (or elements).  Elements are separated by commas.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-5
+//= type=implication
+//# An array structure is represented as square brackets surrounding zero
+//# or more values (or elements).  Elements are separated by commas.
+// ArrayEnd right after ArrayStart => empty; otherwise value, then ArrayEnd or
+// Comma + next element. Trailing commas are rejected.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-5
+//= type=spec
+//= level=MUST
+//# array = begin-array [ value *( value-separator value ) ] end-array
+//= https://www.rfc-editor.org/rfc/rfc8259#section-5
+//= type=implication
+//# array = begin-array [ value *( value-separator value ) ] end-array
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-5
+//= type=spec
+//= level=MUST
+//# There is no requirement that the values in an array be of the same
+//# type.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-5
+//= type=implication
+//# There is no requirement that the values in an array be of the same
+//# type.
+// spec_parse_array_elements calls spec_parse_value with no type restriction.
 pub open spec fn spec_parse_array(input: Seq<u8>, tokens: Seq<Token>, idx: nat, fuel: nat) -> Option<(JsonValueSpec, nat)>
     decreases fuel, tokens.len() - idx, 1nat,
 {
@@ -149,6 +187,25 @@ pub open spec fn spec_parse_array_elements(
 }
 
 /// Spec: parse object members after '{'. Looks for '}' (empty) or member *( ',' member ) '}'.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-4
+//= type=spec
+//= level=MUST
+//# object = begin-object [ member *( value-separator member ) ]
+//#          end-object
+//= https://www.rfc-editor.org/rfc/rfc8259#section-4
+//= type=implication
+//# object = begin-object [ member *( value-separator member ) ]
+//#          end-object
+// Empty object (immediate ObjectEnd) or one-or-more members separated by commas.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-4
+//= type=spec
+//= level=MUST
+//# member = string name-separator value
+//= https://www.rfc-editor.org/rfc/rfc8259#section-4
+//= type=implication
+//# member = string name-separator value
+// String key token, then Colon, then a recursive value.
 pub open spec fn spec_parse_object(input: Seq<u8>, tokens: Seq<Token>, idx: nat, fuel: nat) -> Option<(JsonValueSpec, nat)>
     decreases fuel, tokens.len() - idx, 1nat,
 {
@@ -265,6 +322,24 @@ pub open spec fn value_matches_spec(v: JsonValue, s: JsonValueSpec, input: Seq<u
 /// Since our tokenizer already strips whitespace, this just means:
 /// parse a single value that consumes ALL tokens.
 /// Uses tokens.len() as fuel (sufficient for any well-formed input).
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=spec
+//= level=MUST
+//# A JSON text is a serialized value.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=implication
+//# A JSON text is a serialized value.
+// Parses exactly one value and requires all tokens consumed (None otherwise).
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=spec
+//= level=MUST
+//# JSON-text = ws value ws
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=implication
+//# JSON-text = ws value ws
+// One value consuming all tokens; tokenize_all guarantees bytes before, between,
+// and after tokens are all whitespace.
 pub open spec fn spec_parse_json(input: Seq<u8>, tokens: Seq<Token>) -> Option<JsonValueSpec> {
     match spec_parse_value(input, tokens, 0, tokens.len()) {
         Some((val, next)) => if next == tokens.len() { Some(val) } else { None },

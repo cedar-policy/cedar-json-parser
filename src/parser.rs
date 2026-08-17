@@ -293,6 +293,24 @@ pub(crate) open spec fn keys_are_distinct(entries: Seq<ObjectEntry>) -> bool {
 // This implementation is stricter than the SHOULD: duplicate keys are
 // rejected. Keys are compared on their DECODED bytes via `slices_equal`,
 // and the postcondition guarantees `keys_are_distinct(entries@)`.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-8.3
+//= type=spec
+//= level=MUST
+//# Implementations that transform the
+//# textual representation into sequences of Unicode code units and then
+//# perform the comparison numerically, code unit by code unit, are
+//# interoperable in the sense that implementations will agree in all
+//# cases on equality or inequality of two strings.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-8.3
+//= type=implication
+//# Implementations that transform the
+//# textual representation into sequences of Unicode code units and then
+//# perform the comparison numerically, code unit by code unit, are
+//# interoperable in the sense that implementations will agree in all
+//# cases on equality or inequality of two strings.
+// Duplicate detection compares DECODED key bytes, so "a\\b" and "a\u005Cb"
+// (both decode to [0x61,0x5C,0x62]) are correctly seen as equal.
 fn parse_object_body(input: &[u8], tokens: &[Token], cur_start: usize, gas: usize, open_start: usize) -> (result: ParseResult)
     requires
         cur_start <= tokens@.len(),
@@ -532,7 +550,7 @@ pub enum ParseJsonError {
 /// mathematical specification `spec_parse_json` applied to the tokenized input.
 //= https://www.rfc-editor.org/rfc/rfc8259#section-9
 //= type=exception
-//= reason=Soundness (Ok => matches spec_parse_json) and tokenizer completeness are proven; full parser completeness (fuel sufficiency + parse_value completeness) is not yet proven. See RFC8259_PROOF_COVERAGE.md section 9.
+//= reason=Soundness (Ok => matches spec_parse_json) and tokenizer completeness are proven; full parser completeness (fuel sufficiency + parse_value completeness) is not yet proven.
 //# A JSON parser MUST accept all texts that conform to the JSON grammar.
 pub fn parse_json(input: &[u8]) -> (result: Result<JsonValue, ParseJsonError>)
     ensures

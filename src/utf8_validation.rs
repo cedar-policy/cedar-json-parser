@@ -264,6 +264,17 @@ pub(crate) enum Utf8CharResult {
 // `valid_first_scalar` (RFC 3629 UTF-8): overlong encodings, surrogate code
 // points, and code points > U+10FFFF are rejected. Structural tokens,
 // keywords, numbers, and whitespace are ASCII, hence trivially UTF-8.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//= level=MUST
+//# unescaped = %x20-21 / %x23-5B / %x5D-10FFFF
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=implication
+//# unescaped = %x20-21 / %x23-5B / %x5D-10FFFF
+// Every accepted unescaped byte sequence is a valid Unicode scalar in these
+// ranges: quote (0x22) and backslash (0x5C) are handled before reaching here,
+// control chars (<0x20) are rejected, and multi-byte UTF-8 is validated.
 pub(crate) fn validate_utf8_char(input: &[u8], pos: usize, end: usize) -> (result: Utf8CharResult)
     requires
         pos < end,

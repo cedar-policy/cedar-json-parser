@@ -260,6 +260,31 @@ pub open spec fn spec_all_number_bytes(input: Seq<u8>, start: nat, end: nat) -> 
 
 /// Spec: the integer part at `pos` is valid — either "0" not followed by digit,
 /// or digit1-9 followed by zero or more digits. Returns the end position.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=spec
+//= level=MUST
+//# int = zero / ( digit1-9 *DIGIT )
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=implication
+//# int = zero / ( digit1-9 *DIGIT )
+// '0' (ZERO 0x30) is valid only if not followed by a digit (rejects leading
+// zeros); 0x31-0x39 (digit1-9) is followed by zero or more digits.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=spec
+//= level=MUST
+//# zero = %x30                ; 0
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=implication
+//# zero = %x30                ; 0
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=spec
+//= level=MUST
+//# digit1-9 = %x31-39         ; 1-9
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=implication
+//# digit1-9 = %x31-39         ; 1-9
 pub open spec fn spec_int_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
     recommends pos <= input.len(),
 {
@@ -281,6 +306,22 @@ pub open spec fn spec_int_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
 }
 
 /// Spec: consume optional fractional part. Returns end position (unchanged if no '.').
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=spec
+//= level=MUST
+//# frac = decimal-point 1*DIGIT
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=implication
+//# frac = decimal-point 1*DIGIT
+// After '.', at least one digit is required, then remaining digits consumed.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=spec
+//= level=MUST
+//# decimal-point = %x2E       ; .
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=implication
+//# decimal-point = %x2E       ; .
 pub open spec fn spec_frac_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
     recommends pos <= input.len(),
 {
@@ -298,6 +339,30 @@ pub open spec fn spec_frac_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
 }
 
 /// Spec: consume optional exponent part. Returns end position (unchanged if no 'e'/'E').
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=spec
+//= level=MUST
+//# exp = e [ minus / plus ] 1*DIGIT
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=implication
+//# exp = e [ minus / plus ] 1*DIGIT
+// After 'e'/'E', optional '+'/'-', then at least one digit is required.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=spec
+//= level=MUST
+//# e = %x65 / %x45            ; e E
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=implication
+//# e = %x65 / %x45            ; e E
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=spec
+//= level=MUST
+//# plus = %x2B                ; +
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=implication
+//# plus = %x2B                ; +
 pub open spec fn spec_exp_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
     recommends pos <= input.len(),
 {
@@ -323,6 +388,24 @@ pub open spec fn spec_exp_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
 
 /// Spec: a valid JSON number at position `pos` ends at position `end`.
 /// This is the complete RFC 8259 §6 grammar as a spec function.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=spec
+//= level=MUST
+//# number = [ minus ] int [ frac ] [ exp ]
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=implication
+//# number = [ minus ] int [ frac ] [ exp ]
+// Optional leading '-', required int part, optional frac, optional exp.
+// `consume_number` returns Ok iff spec_is_valid_json_number holds, and Err iff
+// spec_number_end is None (completeness).
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=spec
+//= level=MUST
+//# minus = %x2D               ; -
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=implication
+//# minus = %x2D               ; -
 pub open spec fn spec_number_end(input: Seq<u8>, pos: nat) -> Option<nat>
     recommends pos <= input.len(),
 {
@@ -531,6 +614,32 @@ pub(crate) enum StringResult {
 ///          at tokenizer level — tokenizer only checks structure, not semantics)
 /// - < 0x20 → invalid (control char)
 /// - otherwise → valid UTF-8 char, advance by its length
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//= level=MUST
+//# string = quotation-mark *char quotation-mark
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=implication
+//# string = quotation-mark *char quotation-mark
+// The token opens and closes with a quote (token_content_valid), and the body
+// scanned here is a sequence of chars (escaped or unescaped).
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//= level=MUST
+//# quotation-mark = %x22      ; "
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=implication
+//# quotation-mark = %x22      ; "
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//= level=MUST
+//# escape = %x5C              ; \
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=implication
+//# escape = %x5C              ; \
 pub open spec fn spec_string_end(input: Seq<u8>, pos: nat) -> Option<nat>
     recommends pos <= input.len(),
     decreases input.len() - pos,
@@ -697,6 +806,17 @@ pub(crate) fn consume_keyword(input: &[u8], pos: usize, keyword: &[u8]) -> (resu
 // =============================================================================
 
 /// The kind of a JSON token
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=spec
+//= level=MUST
+//# A JSON text is a sequence of tokens.  The set of tokens includes six
+//# structural characters, strings, numbers, and three literal names.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=implication
+//# A JSON text is a sequence of tokens.  The set of tokens includes six
+//# structural characters, strings, numbers, and three literal names.
+// This enum has exactly: 6 structural (ArrayStart/End, ObjectStart/End, Comma,
+// Colon), String, Number, and 3 literals (Null, True, False).
 pub enum TokenKind {
     Null,
     True,
@@ -739,6 +859,39 @@ pub(crate) enum TokenResult {
 /// - String tokens are delimited by `"` (opening quote at start)
 /// - Single-character structural tokens have the correct byte
 /// - Number tokens start with '-' or a digit
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=spec
+//= level=MUST
+//# These are the six structural characters:
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=implication
+//# These are the six structural characters:
+// Each structural token is exactly one byte: [ 0x5B, ] 0x5D, { 0x7B, } 0x7D,
+// : 0x3A, , 0x2C — asserted per-kind below.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-3
+//= type=spec
+//= level=MUST
+//# false = %x66.61.6c.73.65   ; false
+//= https://www.rfc-editor.org/rfc/rfc8259#section-3
+//= type=implication
+//# false = %x66.61.6c.73.65   ; false
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-3
+//= type=spec
+//= level=MUST
+//# null  = %x6e.75.6c.6c      ; null
+//= https://www.rfc-editor.org/rfc/rfc8259#section-3
+//= type=implication
+//# null  = %x6e.75.6c.6c      ; null
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-3
+//= type=spec
+//= level=MUST
+//# true  = %x74.72.75.65      ; true
+//= https://www.rfc-editor.org/rfc/rfc8259#section-3
+//= type=implication
+//# true  = %x74.72.75.65      ; true
 pub open spec fn token_content_valid(token: Token, input: Seq<u8>) -> bool {
     // Common structural requirement: non-empty span within bounds
     &&& token.start < token.end

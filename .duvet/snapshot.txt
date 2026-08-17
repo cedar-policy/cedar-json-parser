@@ -1,0 +1,32 @@
+SPECIFICATION: https://www.rfc-editor.org/rfc/rfc8259
+  SECTION: [Values](#section-3)
+    TEXT[!MUST,implication]:    A JSON value MUST be an object, array, number, or string, or one of
+    TEXT[!MUST,implication]:    the following three literal names:
+    TEXT[!MUST,implementation]:    The literal names MUST be lowercase.
+
+  SECTION: [Objects](#section-4)
+    TEXT[!SHOULD,implementation]: The names within an object SHOULD be unique.
+
+  SECTION: [Strings](#section-7)
+    TEXT[!MUST,implementation]: All Unicode characters may be placed within the
+    TEXT[!MUST,implementation]:    quotation marks, except for the characters that MUST be escaped:
+    TEXT[!MUST,implementation]:    quotation mark, reverse solidus, and the control characters (U+0000
+    TEXT[!MUST,implementation]:    through U+001F).
+
+  SECTION: [Character Encoding](#section-8.1)
+    TEXT[!MUST,implementation]:    JSON text exchanged between systems that are not part of a closed
+    TEXT[!MUST,implementation]:    ecosystem MUST be encoded using UTF-8 [RFC3629].
+    TEXT[!MUST,exception]:    Implementations MUST NOT add a byte order mark (U+FEFF) to the
+    TEXT[!MUST,exception]:    beginning of a networked-transmitted JSON text.
+    TEXT[!MAY,exception]: In the interests of
+    TEXT[!MAY,exception]:    interoperability, implementations that parse JSON texts MAY ignore
+    TEXT[!MAY,exception]:    the presence of a byte order mark rather than treating it as an
+    TEXT[!MAY,exception]:    error.
+
+  SECTION: [Parsers](#section-9)
+    TEXT[!MUST,exception]:    JSON parser MUST accept all texts that conform to the JSON grammar.
+    TEXT[!MAY,exception]:    A JSON parser MAY accept non-JSON forms or extensions.
+
+  SECTION: [Generators](#section-10)
+    TEXT[!MUST,exception]: The resulting text MUST
+    TEXT[!MUST,exception]:    strictly conform to the JSON grammar.

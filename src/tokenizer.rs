@@ -575,6 +575,14 @@ pub open spec fn spec_string_end(input: Seq<u8>, pos: nat) -> Option<nat>
 /// Consume a JSON string literal body (after opening '"').
 /// Returns the position just after the closing '"'.
 /// Validates that unescaped content is valid UTF-8.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//# All Unicode characters may be placed within the
+//# quotation marks, except for the characters that MUST be escaped:
+//# quotation mark, reverse solidus, and the control characters (U+0000
+//# through U+001F).
+// A 0x22 quote terminates the string, 0x5C backslash enters escape
+// processing, and `b < 0x20` (all control characters U+0000..U+001F) is
+// rejected with InvalidEscape. All other bytes are validated as UTF-8.
 pub(crate) fn consume_string(input: &[u8], pos: usize) -> (result: StringResult)
     requires
         pos <= input@.len(),
@@ -875,6 +883,12 @@ pub open spec fn spec_next_token(input: Seq<u8>, pos: nat) -> Option<(nat, nat)>
 ///   the previous token.end produce non-overlapping spans
 /// - **Content validity**: token kind matches the actual bytes at the span
 ///   (keywords have exact bytes, strings start with `"`, etc.)
+//= https://www.rfc-editor.org/rfc/rfc8259#section-3
+//# The literal names MUST be lowercase.
+// Keyword dispatch below only recognizes lowercase first bytes 't' (0x74),
+// 'f' (0x66), 'n' (0x6E), and `consume_keyword` asserts the exact lowercase
+// byte sequences. Uppercase variants produce ErrUnexpectedToken. Proven via
+// `token_content_valid` for True/False/Null.
 pub(crate) fn get_token(input: &[u8], pos: usize) -> (result: TokenResult)
     requires
         pos <= input@.len(),

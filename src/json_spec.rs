@@ -65,6 +65,13 @@ pub open spec fn spec_decode_string_token(input: Seq<u8>, start: nat, end: nat) 
 ///
 /// Uses `fuel` to ensure termination. Sufficient fuel always exists for
 /// well-formed token streams (every recursive call advances idx strictly).
+//= https://www.rfc-editor.org/rfc/rfc8259#section-3
+//= type=implication
+//# A JSON value MUST be an object, array, number, or string, or one of
+//# the following three literal names:
+// The match below dispatches on token kind covering exactly the 7 value
+// alternatives (Null, True, False, Number, String, ArrayStart -> array,
+// ObjectStart -> object). Any other token kind in value position -> None.
 pub open spec fn spec_parse_value(input: Seq<u8>, tokens: Seq<Token>, idx: nat, fuel: nat) -> Option<(JsonValueSpec, nat)>
     decreases fuel, tokens.len() - idx, 2nat,
 {

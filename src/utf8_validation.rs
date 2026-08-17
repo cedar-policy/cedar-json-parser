@@ -257,6 +257,13 @@ pub(crate) enum Utf8CharResult {
 ///
 /// On success, returns the number of bytes consumed (1-4).
 /// Proven: `Ok` iff vstd's `valid_first_scalar` holds on the subrange.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-8.1
+//# JSON text exchanged between systems that are not part of a closed
+//# ecosystem MUST be encoded using UTF-8 [RFC3629].
+// Unescaped string content is validated here against vstd's
+// `valid_first_scalar` (RFC 3629 UTF-8): overlong encodings, surrogate code
+// points, and code points > U+10FFFF are rejected. Structural tokens,
+// keywords, numbers, and whitespace are ASCII, hence trivially UTF-8.
 pub(crate) fn validate_utf8_char(input: &[u8], pos: usize, end: usize) -> (result: Utf8CharResult)
     requires
         pos < end,

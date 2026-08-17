@@ -288,6 +288,11 @@ pub(crate) open spec fn keys_are_distinct(entries: Seq<ObjectEntry>) -> bool {
 }
 
 /// Parse object body after '{'. Decodes keys and detects duplicates.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-4
+//# The names within an object SHOULD be unique.
+// This implementation is stricter than the SHOULD: duplicate keys are
+// rejected. Keys are compared on their DECODED bytes via `slices_equal`,
+// and the postcondition guarantees `keys_are_distinct(entries@)`.
 fn parse_object_body(input: &[u8], tokens: &[Token], cur_start: usize, gas: usize, open_start: usize) -> (result: ParseResult)
     requires
         cur_start <= tokens@.len(),
@@ -525,6 +530,10 @@ pub enum ParseJsonError {
 ///
 /// Functional correctness: on success, the returned value matches the
 /// mathematical specification `spec_parse_json` applied to the tokenized input.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-9
+//= type=exception
+//= reason=Soundness (Ok => matches spec_parse_json) and tokenizer completeness are proven; full parser completeness (fuel sufficiency + parse_value completeness) is not yet proven. See RFC8259_PROOF_COVERAGE.md section 9.
+//# A JSON parser MUST accept all texts that conform to the JSON grammar.
 pub fn parse_json(input: &[u8]) -> (result: Result<JsonValue, ParseJsonError>)
     ensures
         match result {

@@ -257,6 +257,8 @@ pub(crate) enum Utf8CharResult {
 ///
 /// On success, returns the number of bytes consumed (1-4).
 /// Proven: `Ok` iff vstd's `valid_first_scalar` holds on the subrange.
+//
+// Establishes the §8.1 UTF-8 encoding requirement and the §7 unescaped grammar.
 //= https://www.rfc-editor.org/rfc/rfc8259#section-8.1
 //# JSON text exchanged between systems that are not part of a closed
 //# ecosystem MUST be encoded using UTF-8 [RFC3629].

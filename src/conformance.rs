@@ -16,6 +16,7 @@
 
 // The parser accepts strictly RFC 8259 JSON and does not recognize any
 // non-JSON forms or extensions.
+//
 //= https://www.rfc-editor.org/rfc/rfc8259#section-9
 //= type=exception
 //= reason=This parser accepts strictly RFC 8259 JSON only and does not accept non-JSON forms or extensions.
@@ -24,6 +25,7 @@ const EXTENSIONS_NOT_ACCEPTED: () = ();
 
 // Generator-side requirement. This crate is a parser and never emits JSON
 // text, so it cannot add a byte order mark.
+//
 //= https://www.rfc-editor.org/rfc/rfc8259#section-8.1
 //= type=exception
 //= reason=Generator-side requirement. This crate is a parser and never emits JSON text, so it cannot add a byte order mark.
@@ -33,6 +35,7 @@ const BOM_NOT_EMITTED: () = ();
 
 // Optional (MAY). This parser does not skip a leading BOM; a BOM byte is an
 // unrecognized token and causes a tokenization error.
+//
 //= https://www.rfc-editor.org/rfc/rfc8259#section-8.1
 //= type=exception
 //= reason=Optional (MAY). This parser does not skip a leading BOM; a BOM byte is an unrecognized token and causes a tokenization error.
@@ -44,6 +47,7 @@ const BOM_NOT_IGNORED: () = ();
 
 // Generator-side requirement. This crate is a parser, not a generator, and
 // produces no JSON text.
+//
 //= https://www.rfc-editor.org/rfc/rfc8259#section-10
 //= type=exception
 //= reason=Generator-side requirement. This crate is a parser, not a generator, and produces no JSON text.

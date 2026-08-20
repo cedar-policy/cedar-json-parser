@@ -79,14 +79,6 @@ pub open spec fn spec_is_hex_digit(b: u8) -> bool {
 //#         %x09 /              ; Horizontal tab
 //#         %x0A /              ; Line feed or New line
 //#         %x0D )              ; Carriage return
-//= https://www.rfc-editor.org/rfc/rfc8259#section-2
-//= type=implication
-//# ws = *(
-//#         %x20 /              ; Space
-//#         %x09 /              ; Horizontal tab
-//#         %x0A /              ; Line feed or New line
-//#         %x0D )              ; Carriage return
-// Accepts exactly the four whitespace bytes: 0x20, 0x09, 0x0A, 0x0D.
 pub open spec fn spec_is_whitespace(b: u8) -> bool {
     b == SPACE() || b == TAB() || b == NEWLINE() || b == CR()
 }
@@ -418,6 +410,15 @@ pub(crate) fn is_hex_digit(b: u8) -> (result: bool)
 }
 
 /// Exec: check if byte is JSON whitespace (space, tab, newline, carriage return)
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=implication
+//# ws = *(
+//#         %x20 /              ; Space
+//#         %x09 /              ; Horizontal tab
+//#         %x0A /              ; Line feed or New line
+//#         %x0D )              ; Carriage return
+// Accepts exactly the four whitespace bytes: 0x20, 0x09, 0x0A, 0x0D.
 pub(crate) fn is_whitespace(b: u8) -> (result: bool)
     ensures
         result == spec_is_whitespace(b),

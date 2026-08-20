@@ -31,22 +31,10 @@ verus! {
 
 /// Spec: the byte that a simple escape character decodes to (RFC 8259 §7).
 /// For example, 'n' maps to newline (0x0A).
+//
 //= https://www.rfc-editor.org/rfc/rfc8259#section-7
 //= type=spec
 //= level=MUST
-//# char = unescaped /
-//#     escape (
-//#         %x22 /          ; "    quotation mark  U+0022
-//#         %x5C /          ; \    reverse solidus U+005C
-//#         %x2F /          ; /    solidus         U+002F
-//#         %x62 /          ; b    backspace       U+0008
-//#         %x66 /          ; f    form feed       U+000C
-//#         %x6E /          ; n    line feed       U+000A
-//#         %x72 /          ; r    carriage return U+000D
-//#         %x74 /          ; t    tab             U+0009
-//#         %x75 4HEXDIG )  ; uXXXX                U+XXXX
-//= https://www.rfc-editor.org/rfc/rfc8259#section-7
-//= type=implication
 //# char = unescaped /
 //#     escape (
 //#         %x22 /          ; "    quotation mark  U+0022
@@ -82,15 +70,10 @@ pub open spec fn spec_simple_escape_byte(esc: u8) -> u8 {
 ///
 /// Returns `None` on any malformed escape sequence.
 /// Returns `Some(bytes)` with the fully decoded byte sequence on success.
+//
 //= https://www.rfc-editor.org/rfc/rfc8259#section-8.2
 //= type=spec
 //= level=MUST
-//# However, the ABNF in this specification allows member names and
-//# string values to contain bit sequences that cannot encode Unicode
-//# characters; for example, "\uDEAD" (a single unpaired UTF-16
-//# surrogate).
-//= https://www.rfc-editor.org/rfc/rfc8259#section-8.2
-//= type=implication
 //# However, the ABNF in this specification allows member names and
 //# string values to contain bit sequences that cannot encode Unicode
 //# characters; for example, "\uDEAD" (a single unpaired UTF-16
@@ -566,6 +549,29 @@ fn decode_one_chunk(input: &[u8], i: usize, end: usize, out: &mut Vec<u8>) -> (r
 /// - `NoEscapes` implies `spec_decode` returns `Some(input[start..end])`
 /// - `Ok { bytes }` implies `spec_decode` returns `Some(bytes@)` (unconditional)
 /// - `Err` implies `spec_decode` returns `None`
+//
+// The `ensures` proves the result matches `spec_decode`: the 8 simple escapes
+// and `\uXXXX` (BMP + surrogate pairs) are decoded, unknown escapes fail, and
+// lone/unpaired surrogates are rejected — so these hold by construction.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=implication
+//# char = unescaped /
+//#     escape (
+//#         %x22 /          ; "    quotation mark  U+0022
+//#         %x5C /          ; \    reverse solidus U+005C
+//#         %x2F /          ; /    solidus         U+002F
+//#         %x62 /          ; b    backspace       U+0008
+//#         %x66 /          ; f    form feed       U+000C
+//#         %x6E /          ; n    line feed       U+000A
+//#         %x72 /          ; r    carriage return U+000D
+//#         %x74 /          ; t    tab             U+0009
+//#         %x75 4HEXDIG )  ; uXXXX                U+XXXX
+//= https://www.rfc-editor.org/rfc/rfc8259#section-8.2
+//= type=implication
+//# However, the ABNF in this specification allows member names and
+//# string values to contain bit sequences that cannot encode Unicode
+//# characters; for example, "\uDEAD" (a single unpaired UTF-16
+//# surrogate).
 pub(crate) fn decode_json_escapes_bytes(input: &[u8], start: usize, end: usize) -> (result: DecodeResult)
     requires
         start <= end,

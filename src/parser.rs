@@ -98,6 +98,17 @@ fn decode_string_token(input: &[u8], start: usize, end: usize) -> (result: Decod
 }
 
 /// Parse a JSON value. `input` is the raw source bytes (needed for string decoding).
+//
+// The `match` on token kind dispatches over exactly the seven RFC 8259 §3 value
+// alternatives, and the `ensures` clause proves the result matches
+// `spec_parse_value` — so these requirements hold by construction.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-3
+//= type=implication
+//# A JSON value MUST be an object, array, number, or string, or one of
+//# the following three literal names:
+//= https://www.rfc-editor.org/rfc/rfc8259#section-3
+//= type=implication
+//# value = false / null / true / object / array / number / string
 pub(crate) fn parse_value(input: &[u8], tokens: &[Token], idx: usize, gas: usize) -> (result: ParseResult)
     requires
         idx <= tokens@.len(),
@@ -180,6 +191,19 @@ pub(crate) fn parse_value(input: &[u8], tokens: &[Token], idx: usize, gas: usize
 }
 
 /// Parse array body after '['.
+//
+// The loop below recognizes `begin-array [ value *( value-separator value ) ]
+// end-array` (empty array, or values comma-separated, trailing comma rejected),
+// and calls `parse_value` with no type restriction so elements may be
+// heterogeneous. The `ensures` proves the result matches `spec_parse_array`, so
+// these requirements hold by construction.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-5
+//= type=implication
+//# An array structure is represented as square brackets surrounding zero
+//# or more values (or elements).  Elements are separated by commas.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-5
+//= type=implication
+//# array = begin-array [ value *( value-separator value ) ] end-array
 fn parse_array_body(input: &[u8], tokens: &[Token], cur_start: usize, gas: usize, open_start: usize) -> (result: ParseResult)
     requires
         cur_start <= tokens@.len(),
@@ -288,6 +312,18 @@ pub(crate) open spec fn keys_are_distinct(entries: Seq<ObjectEntry>) -> bool {
 }
 
 /// Parse object body after '{'. Decodes keys and detects duplicates.
+//
+// The key/colon/value loop recognizes `begin-object [ member *( value-separator
+// member ) ] end-object` where `member = string name-separator value`; the
+// `ensures` proves the result matches `spec_parse_object`, so these hold by
+// construction.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-4
+//= type=implication
+//# object = begin-object [ member *( value-separator member ) ]
+//#          end-object
+//= https://www.rfc-editor.org/rfc/rfc8259#section-4
+//= type=implication
+//# member = string name-separator value
 //= https://www.rfc-editor.org/rfc/rfc8259#section-4
 //# The names within an object SHOULD be unique.
 // This implementation is stricter than the SHOULD: duplicate keys are
@@ -543,14 +579,27 @@ pub enum ParseJsonError {
 /// Tokenize and parse a complete JSON document from raw bytes.
 ///
 /// This is the primary entry point that combines tokenization and parsing
-/// in verified code, eliminating the need for unverified glue between the
-/// tokenizer and parser.
+/// in verified code. [`parse_json`] has no `requires` clauses and ensures
+/// soundness: on success, the returned value matches the specification `spec_parse_json`.
 ///
-/// Functional correctness: on success, the returned value matches the
-/// mathematical specification `spec_parse_json` applied to the tokenized input.
+/// The intermediate tokenization step is proven sound and complete relative to the RFC8259 spec.
+//
+// Soundness (Ok => matches spec_parse_json) and tokenizer completeness are
+// proven. Full parser completeness (fuel sufficiency + parse_value
+// completeness) is not yet proven, so this MUST is not fully satisfied; it is
+// tracked as outstanding work rather than a deliberate exception.
+//
+// `tokenize_all` strips leading/inner/trailing whitespace and `parse` consumes
+// exactly one value over all tokens, so on success the document is `ws value ws`
+// (a single serialized value) by construction.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=implication
+//# A JSON text is a serialized value.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=implication
+//# JSON-text = ws value ws
 //= https://www.rfc-editor.org/rfc/rfc8259#section-9
-//= type=exception
-//= reason=Soundness (Ok => matches spec_parse_json) and tokenizer completeness are proven; full parser completeness (fuel sufficiency + parse_value completeness) is not yet proven.
+//= type=todo
 //# A JSON parser MUST accept all texts that conform to the JSON grammar.
 pub fn parse_json(input: &[u8]) -> (result: Result<JsonValue, ParseJsonError>)
     ensures

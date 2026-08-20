@@ -16,9 +16,6 @@ SPECIFICATION: https://www.rfc-editor.org/rfc/rfc8259
     TEXT[!MUST,implication]:    the following three literal names:
     TEXT[!MUST,implementation]:    The literal names MUST be lowercase.
     TEXT[!MUST,implication]:       value = false / null / true / object / array / number / string
-    TEXT[!MUST,implication]:       false = %x66.61.6c.73.65   ; false
-    TEXT[!MUST,implication]:       null  = %x6e.75.6c.6c      ; null
-    TEXT[!MUST,implication]:       true  = %x74.72.75.65      ; true
 
   SECTION: [Objects](#section-4)
     TEXT[!SHOULD,implementation]: The names within an object SHOULD be unique.
@@ -30,20 +27,12 @@ SPECIFICATION: https://www.rfc-editor.org/rfc/rfc8259
     TEXT[!MUST,implication]:    An array structure is represented as square brackets surrounding zero
     TEXT[!MUST,implication]:    or more values (or elements).  Elements are separated by commas.
     TEXT[!MUST,implication]:    array = begin-array [ value *( value-separator value ) ] end-array
-    TEXT[!MUST,implication]:    There is no requirement that the values in an array be of the same
-    TEXT[!MUST,implication]:    type.
 
   SECTION: [Numbers](#section-6)
     TEXT[!MUST,implication]:       number = [ minus ] int [ frac ] [ exp ]
-    TEXT[!MUST,implication]:       decimal-point = %x2E       ; .
-    TEXT[!MUST,implication]:       digit1-9 = %x31-39         ; 1-9
-    TEXT[!MUST,implication]:       e = %x65 / %x45            ; e E
     TEXT[!MUST,implication]:       exp = e [ minus / plus ] 1*DIGIT
     TEXT[!MUST,implication]:       frac = decimal-point 1*DIGIT
     TEXT[!MUST,implication]:       int = zero / ( digit1-9 *DIGIT )
-    TEXT[!MUST,implication]:       minus = %x2D               ; -
-    TEXT[!MUST,implication]:       plus = %x2B                ; +
-    TEXT[!MUST,implication]:       zero = %x30                ; 0
 
   SECTION: [Strings](#section-7)
     TEXT[!MUST,implementation]: All Unicode characters may be placed within the
@@ -62,8 +51,6 @@ SPECIFICATION: https://www.rfc-editor.org/rfc/rfc8259
     TEXT[!MUST,implication]:               %x72 /          ; r    carriage return U+000D
     TEXT[!MUST,implication]:               %x74 /          ; t    tab             U+0009
     TEXT[!MUST,implication]:               %x75 4HEXDIG )  ; uXXXX                U+XXXX
-    TEXT[!MUST,implication]:       escape = %x5C              ; \
-    TEXT[!MUST,implication]:       quotation-mark = %x22      ; "
     TEXT[!MUST,implication]:       unescaped = %x20-21 / %x23-5B / %x5D-10FFFF
 
   SECTION: [Character Encoding](#section-8.1)
@@ -90,7 +77,7 @@ SPECIFICATION: https://www.rfc-editor.org/rfc/rfc8259
     TEXT[!MUST,implication]:    cases on equality or inequality of two strings.
 
   SECTION: [Parsers](#section-9)
-    TEXT[!MUST,exception]:    JSON parser MUST accept all texts that conform to the JSON grammar.
+    TEXT[!MUST,todo]:    JSON parser MUST accept all texts that conform to the JSON grammar.
     TEXT[!MAY,exception]:    A JSON parser MAY accept non-JSON forms or extensions.
 
   SECTION: [Generators](#section-10)

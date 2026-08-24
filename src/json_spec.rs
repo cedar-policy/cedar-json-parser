@@ -74,6 +74,7 @@ pub open spec fn spec_decode_string_token(input: Seq<u8>, start: nat, end: nat) 
 //= type=spec
 //= level=MUST
 //# value = false / null / true / object / array / number / string
+//
 pub open spec fn spec_parse_value(input: Seq<u8>, tokens: Seq<Token>, idx: nat, fuel: nat) -> Option<(JsonValueSpec, nat)>
     decreases fuel, tokens.len() - idx, 2nat,
 {
@@ -112,13 +113,12 @@ pub open spec fn spec_parse_value(input: Seq<u8>, tokens: Seq<Token>, idx: nat, 
 //= level=MUST
 //# An array structure is represented as square brackets surrounding zero
 //# or more values (or elements).  Elements are separated by commas.
-// ArrayEnd right after ArrayStart => empty; otherwise value, then ArrayEnd or
-// Comma + next element. Trailing commas are rejected.
 //
 //= https://www.rfc-editor.org/rfc/rfc8259#section-5
 //= type=spec
 //= level=MUST
 //# array = begin-array [ value *( value-separator value ) ] end-array
+//
 pub open spec fn spec_parse_array(input: Seq<u8>, tokens: Seq<Token>, idx: nat, fuel: nat) -> Option<(JsonValueSpec, nat)>
     decreases fuel, tokens.len() - idx, 1nat,
 {
@@ -296,19 +296,16 @@ pub open spec fn value_matches_spec(v: JsonValue, s: JsonValueSpec, input: Seq<u
 /// parse a single value that consumes ALL tokens.
 /// Uses tokens.len() as fuel (sufficient for any well-formed input).
 //
-// Declares the §2 whole-document requirements (serialized value and JSON-text grammar).
 //= https://www.rfc-editor.org/rfc/rfc8259#section-2
 //= type=spec
 //= level=MUST
 //# A JSON text is a serialized value.
-// Parses exactly one value and requires all tokens consumed (None otherwise).
 //
 //= https://www.rfc-editor.org/rfc/rfc8259#section-2
 //= type=spec
 //= level=MUST
 //# JSON-text = ws value ws
-// One value consuming all tokens; tokenize_all guarantees bytes before, between,
-// and after tokens are all whitespace.
+//
 pub open spec fn spec_parse_json(input: Seq<u8>, tokens: Seq<Token>) -> Option<JsonValueSpec> {
     match spec_parse_value(input, tokens, 0, tokens.len()) {
         Some((val, next)) => if next == tokens.len() { Some(val) } else { None },

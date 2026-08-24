@@ -1,18 +1,9 @@
 //! RFC 8259 conformance declarations.
 //!
 //! This module is a documentation-only home for RFC 8259 requirements that are
-//! *not* implemented by a specific piece of executable logic, either because
-//! they are out of scope for a parser (generator-side requirements) or because
-//! they describe an optional behavior this parser deliberately declines.
-//!
-//! Duvet requires each annotation to anchor to its own distinct code construct,
-//! so each requirement below is attached to a dedicated marker constant whose
-//! name states which decision it records. Nothing here affects runtime
-//! behavior; the constants exist only to give each `duvet` exception a stable,
-//! self-describing anchor.
-//!
-//! Requirements tied to actual logic live next to that logic (e.g. UTF-8
-//! validation, string escaping, duplicate-key rejection), not here.
+//! *not* implemented by this parser. Some of those are motivated choices
+//! (.e.g not having any extensions) and others are out-of-scope requirements regarding
+//! generation of JSON text.
 
 // The parser accepts strictly RFC 8259 JSON and does not recognize any
 // non-JSON forms or extensions.

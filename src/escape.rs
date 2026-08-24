@@ -49,9 +49,9 @@ verus! {
 // The 8 simple escapes map here; \uXXXX (BMP + surrogate pairs) is handled in
 // spec_decode. Unknown escapes return None.
 pub open spec fn spec_simple_escape_byte(esc: u8) -> u8 {
-    if esc == QUOTE() { QUOTE() }             // \" -> "
-    else if esc == BACKSLASH() { BACKSLASH() } // \\ -> \
-    else if esc == SLASH() { SLASH() }         // \/ -> /
+    if esc == QUOTATION_MARK() { QUOTATION_MARK() }             // \" -> "
+    else if esc == REVERSE_SOLIDUS() { REVERSE_SOLIDUS() } // \\ -> \
+    else if esc == SOLIDUS() { SOLIDUS() }         // \/ -> /
     else if esc == LOWER_B() { BACKSPACE() }   // \b -> backspace
     else if esc == LOWER_F() { FORMFEED() }    // \f -> form feed
     else if esc == LOWER_N() { NEWLINE() }     // \n -> newline
@@ -87,7 +87,7 @@ pub open spec fn spec_decode(input: Seq<u8>, start: nat, end: nat) -> Option<Seq
 {
     if start >= end {
         Some(seq![])
-    } else if input[start as int] != BACKSLASH() {
+    } else if input[start as int] != REVERSE_SOLIDUS() {
         // Plain byte (not a backslash): output this byte, decode the rest
         match spec_decode(input, start + 1, end) {
             Some(rest) => Some(seq![input[start as int]] + rest),
@@ -117,7 +117,7 @@ pub open spec fn spec_decode(input: Seq<u8>, start: nat, end: nat) -> Option<Seq
                         // High surrogate: must be followed by \uXXXX low surrogate
                         if start + 12 > end {
                             None
-                        } else if input[(start + 6) as int] != BACKSLASH()
+                        } else if input[(start + 6) as int] != REVERSE_SOLIDUS()
                                || input[(start + 7) as int] != LOWER_U() {
                             None
                         } else if !spec_is_hex_quad(input, (start + 8) as nat) {
@@ -174,7 +174,7 @@ proof fn lemma_no_escapes_identity(input: Seq<u8>, start: nat, end: nat)
     requires
         start <= end,
         end <= input.len(),
-        forall|k: int| start <= k < end ==> input[k] != BACKSLASH(),
+        forall|k: int| start <= k < end ==> input[k] != REVERSE_SOLIDUS(),
     ensures
         spec_decode(input, start, end) == Some(input.subrange(start as int, end as int)),
     decreases end - start,
@@ -229,7 +229,7 @@ proof fn lemma_decode_unfold_plain(input: Seq<u8>, start: nat, end: nat)
     requires
         start < end,
         end <= input.len(),
-        input[start as int] != BACKSLASH(),
+        input[start as int] != REVERSE_SOLIDUS(),
         spec_decode_ok(input, start, end),
     ensures
         spec_decode_ok(input, start + 1, end),
@@ -245,7 +245,7 @@ proof fn lemma_decode_fold_plain(input: Seq<u8>, start: nat, end: nat)
     requires
         start < end,
         end <= input.len(),
-        input[start as int] != BACKSLASH(),
+        input[start as int] != REVERSE_SOLIDUS(),
         spec_decode_ok(input, start + 1, end),
     ensures
         spec_decode_ok(input, start, end),
@@ -262,7 +262,7 @@ proof fn lemma_decode_unfold_simple_escape(input: Seq<u8>, start: nat, end: nat)
     requires
         start + 1 < end,
         end <= input.len(),
-        input[start as int] == BACKSLASH(),
+        input[start as int] == REVERSE_SOLIDUS(),
         spec_is_simple_escape(input[(start + 1) as int]),
         spec_decode_ok(input, start, end),
     ensures
@@ -280,7 +280,7 @@ proof fn lemma_decode_fold_simple_escape(input: Seq<u8>, start: nat, end: nat)
     requires
         start + 1 < end,
         end <= input.len(),
-        input[start as int] == BACKSLASH(),
+        input[start as int] == REVERSE_SOLIDUS(),
         spec_is_simple_escape(input[(start + 1) as int]),
         spec_decode_ok(input, start + 2, end),
     ensures
@@ -297,7 +297,7 @@ proof fn lemma_decode_unfold_bmp(input: Seq<u8>, start: nat, end: nat)
     requires
         start + 6 <= end,
         end <= input.len(),
-        input[start as int] == BACKSLASH(),
+        input[start as int] == REVERSE_SOLIDUS(),
         input[(start + 1) as int] == LOWER_U(),
         spec_is_hex_quad(input, (start + 2) as nat),
             !is_surrogate(spec_decode_hex4(input, (start + 2) as nat) as u32),
@@ -317,7 +317,7 @@ proof fn lemma_decode_fold_bmp(input: Seq<u8>, start: nat, end: nat)
     requires
         start + 6 <= end,
         end <= input.len(),
-        input[start as int] == BACKSLASH(),
+        input[start as int] == REVERSE_SOLIDUS(),
         input[(start + 1) as int] == LOWER_U(),
         spec_is_hex_quad(input, (start + 2) as nat),
         !is_surrogate(spec_decode_hex4(input, (start + 2) as nat) as u32),
@@ -336,10 +336,10 @@ proof fn lemma_decode_unfold_surrogate_pair(input: Seq<u8>, start: nat, end: nat
     requires
         start + 12 <= end,
         end <= input.len(),
-        input[start as int] == BACKSLASH(),
+        input[start as int] == REVERSE_SOLIDUS(),
         input[(start + 1) as int] == LOWER_U(),
         spec_is_hex_quad(input, (start + 2) as nat),
-        input[(start + 6) as int] == BACKSLASH(),
+        input[(start + 6) as int] == REVERSE_SOLIDUS(),
         input[(start + 7) as int] == LOWER_U(),
         spec_is_hex_quad(input, (start + 8) as nat),
         ({
@@ -367,10 +367,10 @@ proof fn lemma_decode_fold_surrogate_pair(input: Seq<u8>, start: nat, end: nat)
     requires
         start + 12 <= end,
         end <= input.len(),
-        input[start as int] == BACKSLASH(),
+        input[start as int] == REVERSE_SOLIDUS(),
         input[(start + 1) as int] == LOWER_U(),
         spec_is_hex_quad(input, (start + 2) as nat),
-        input[(start + 6) as int] == BACKSLASH(),
+        input[(start + 6) as int] == REVERSE_SOLIDUS(),
         input[(start + 7) as int] == LOWER_U(),
         spec_is_hex_quad(input, (start + 8) as nat),
         ({
@@ -578,7 +578,7 @@ pub(crate) fn decode_json_escapes_bytes(input: &[u8], start: usize, end: usize) 
         end <= input@.len(),
     ensures
         // Structural: no escapes iff no backslashes
-        result is NoEscapes <==> (forall|k: int| start <= k < end ==> input@[k] != BACKSLASH()),
+        result is NoEscapes <==> (forall|k: int| start <= k < end ==> input@[k] != REVERSE_SOLIDUS()),
         // Functional correctness for NoEscapes:
         result is NoEscapes ==> spec_decode(input@, start as nat, end as nat)
             == Some(input@.subrange(start as int, end as int)),
@@ -598,9 +598,9 @@ pub(crate) fn decode_json_escapes_bytes(input: &[u8], start: usize, end: usize) 
         invariant
             start <= scan <= end,
             end <= input@.len(),
-            !has_escape ==> (forall|k: int| start <= k < scan ==> input@[k] != BACKSLASH()),
+            !has_escape ==> (forall|k: int| start <= k < scan ==> input@[k] != REVERSE_SOLIDUS()),
             has_escape ==> scan == end,
-            has_escape ==> (exists|k: int| start <= k < end && input@[k] == BACKSLASH()),
+            has_escape ==> (exists|k: int| start <= k < end && input@[k] == REVERSE_SOLIDUS()),
         decreases end - scan,
     {
         if input[scan] == 0x5C {
@@ -630,7 +630,7 @@ pub(crate) fn decode_json_escapes_bytes(input: &[u8], start: usize, end: usize) 
         invariant
             start <= i <= end,
             end <= input@.len(),
-            exists|k: int| start <= k < end && input@[k] == BACKSLASH(),
+            exists|k: int| start <= k < end && input@[k] == REVERSE_SOLIDUS(),
             // Backward chain: if tail from i is decodable, so is the whole from start
             spec_decode_ok(input@, i as nat, end as nat) ==>
                 spec_decode_ok(input@, start as nat, end as nat),

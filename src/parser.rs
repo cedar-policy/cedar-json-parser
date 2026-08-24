@@ -197,6 +197,7 @@ pub(crate) fn parse_value(input: &[u8], tokens: &[Token], idx: usize, gas: usize
 // and calls `parse_value` with no type restriction so elements may be
 // heterogeneous. The `ensures` proves the result matches `spec_parse_array`, so
 // these requirements hold by construction.
+//
 //= https://www.rfc-editor.org/rfc/rfc8259#section-5
 //= type=implication
 //# An array structure is represented as square brackets surrounding zero
@@ -317,15 +318,19 @@ pub(crate) open spec fn keys_are_distinct(entries: Seq<ObjectEntry>) -> bool {
 // member ) ] end-object` where `member = string name-separator value`; the
 // `ensures` proves the result matches `spec_parse_object`, so these hold by
 // construction.
+//
 //= https://www.rfc-editor.org/rfc/rfc8259#section-4
 //= type=implication
 //# object = begin-object [ member *( value-separator member ) ]
 //#          end-object
+//
 //= https://www.rfc-editor.org/rfc/rfc8259#section-4
 //= type=implication
 //# member = string name-separator value
+//
 //= https://www.rfc-editor.org/rfc/rfc8259#section-4
 //# The names within an object SHOULD be unique.
+//
 // This implementation is stricter than the SHOULD: duplicate keys are
 // rejected. Keys are compared on their DECODED bytes via `slices_equal`,
 // and the postcondition guarantees `keys_are_distinct(entries@)`.
@@ -338,6 +343,7 @@ pub(crate) open spec fn keys_are_distinct(entries: Seq<ObjectEntry>) -> bool {
 //# perform the comparison numerically, code unit by code unit, are
 //# interoperable in the sense that implementations will agree in all
 //# cases on equality or inequality of two strings.
+//
 //= https://www.rfc-editor.org/rfc/rfc8259#section-8.3
 //= type=implication
 //# Implementations that transform the
@@ -592,15 +598,20 @@ pub enum ParseJsonError {
 // `tokenize_all` strips leading/inner/trailing whitespace and `parse` consumes
 // exactly one value over all tokens, so on success the document is `ws value ws`
 // (a single serialized value) by construction.
+//
 //= https://www.rfc-editor.org/rfc/rfc8259#section-2
 //= type=implication
 //# A JSON text is a serialized value.
+//
 //= https://www.rfc-editor.org/rfc/rfc8259#section-2
 //= type=implication
 //# JSON-text = ws value ws
+//
+// Completeness:
 //= https://www.rfc-editor.org/rfc/rfc8259#section-9
 //= type=todo
 //# A JSON parser MUST accept all texts that conform to the JSON grammar.
+//
 pub fn parse_json(input: &[u8]) -> (result: Result<JsonValue, ParseJsonError>)
     ensures
         match result {

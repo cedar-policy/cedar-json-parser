@@ -12,23 +12,68 @@ verus! {
 
 // --- Whitespace ---
 pub open spec fn SPACE() -> u8 { 0x20 }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//# %x74 /          ; t    tab             U+0009
+// Produced code point (U+0009) for the `\t` escape; see LOWER_T for the escape letter.
 pub open spec fn TAB() -> u8 { 0x09 }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//# %x6E /          ; n    line feed       U+000A
+// Produced code point (U+000A) for the `\n` escape; see LOWER_N for the escape letter.
 pub open spec fn NEWLINE() -> u8 { 0x0A }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//# %x72 /          ; r    carriage return U+000D
+// Produced code point (U+000D) for the `\r` escape; see LOWER_R for the escape letter.
 pub open spec fn CR() -> u8 { 0x0D }
 
 // --- Structural (JSON) ---
-pub open spec fn QUOTE() -> u8 { 0x22 }
-pub open spec fn COMMA() -> u8 { 0x2C }
-pub open spec fn COLON() -> u8 { 0x3A }
-pub open spec fn LBRACKET() -> u8 { 0x5B }
-pub open spec fn RBRACKET() -> u8 { 0x5D }
-pub open spec fn LBRACE() -> u8 { 0x7B }
-pub open spec fn RBRACE() -> u8 { 0x7D }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//# quotation-mark = %x22      ; "
+pub open spec fn QUOTATION_MARK() -> u8 { 0x22 }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=spec
+//# value-separator = ws %x2C ws  ; , comma
+pub open spec fn VALUE_SEPARATOR() -> u8 { 0x2C }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=spec
+//# name-separator  = ws %x3A ws  ; : colon
+pub open spec fn NAME_SEPARATOR() -> u8 { 0x3A }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=spec
+//# begin-array     = ws %x5B ws  ; [ left square bracket
+pub open spec fn BEGIN_ARRAY() -> u8 { 0x5B }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=spec
+//# end-array       = ws %x5D ws  ; ] right square bracket
+pub open spec fn END_ARRAY() -> u8 { 0x5D }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=spec
+//# begin-object    = ws %x7B ws  ; { left curly bracket
+pub open spec fn BEGIN_OBJECT() -> u8 { 0x7B }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=spec
+//# end-object      = ws %x7D ws  ; } right curly bracket
+pub open spec fn END_OBJECT() -> u8 { 0x7D }
 
 // --- Escape-related ---
-pub open spec fn BACKSLASH() -> u8 { 0x5C }
-pub open spec fn SLASH() -> u8 { 0x2F }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//# %x5C /          ; \    reverse solidus U+005C
+pub open spec fn REVERSE_SOLIDUS() -> u8 { 0x5C }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//# %x2F /          ; /    solidus         U+002F
+pub open spec fn SOLIDUS() -> u8 { 0x2F }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//#  %x62 /          ; b    backspace       U+0008
 pub open spec fn BACKSPACE() -> u8 { 0x08 }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//# %x66 /          ; f    form feed       U+000C
 pub open spec fn FORMFEED() -> u8 { 0x0C }
 
 // --- Arithmetic / number-related ---
@@ -47,10 +92,26 @@ pub open spec fn LOWER_B() -> u8 { 0x62 }
 pub open spec fn LOWER_E() -> u8 { 0x65 }
 pub open spec fn LOWER_F() -> u8 { 0x66 }
 pub open spec fn LOWER_L() -> u8 { 0x6C }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//# %x6E /          ; n    line feed       U+000A
+// Escape letter `n`; produces U+000A (see NEWLINE).
 pub open spec fn LOWER_N() -> u8 { 0x6E }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//# %x72 /          ; r    carriage return U+000D
+// Escape letter `r`; produces U+000D (see CR).
 pub open spec fn LOWER_R() -> u8 { 0x72 }
 pub open spec fn LOWER_S() -> u8 { 0x73 }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//# %x74 /          ; t    tab             U+0009
+// Escape letter `t`; produces U+0009 (see TAB).
 pub open spec fn LOWER_T() -> u8 { 0x74 }
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//# %x75 4HEXDIG )  ; uXXXX                U+XXXX
+// Escape letter `u`; introduces a \uXXXX hex escape (see decode_hex4).
 pub open spec fn LOWER_U() -> u8 { 0x75 }
 
 // =============================================================================
@@ -85,9 +146,9 @@ pub open spec fn spec_is_whitespace(b: u8) -> bool {
 
 /// Spec: byte is a valid simple escape character after the backslash (RFC 8259 §7)
 pub open spec fn spec_is_simple_escape(b: u8) -> bool {
-    b == QUOTE()
-    || b == BACKSLASH()
-    || b == SLASH()
+    b == QUOTATION_MARK()
+    || b == REVERSE_SOLIDUS()
+    || b == SOLIDUS()
     || b == LOWER_B()
     || b == LOWER_F()
     || b == LOWER_N()

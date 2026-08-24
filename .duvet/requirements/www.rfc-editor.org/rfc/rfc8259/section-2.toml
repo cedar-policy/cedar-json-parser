@@ -1,0 +1,58 @@
+target = "https://www.rfc-editor.org/rfc/rfc8259#section-2"
+
+# 2.  JSON Grammar
+#
+#    A JSON text is a sequence of tokens.  The set of tokens includes six
+#    structural characters, strings, numbers, and three literal names.
+#
+#    A JSON text is a serialized value.  Note that certain previous
+#    specifications of JSON constrained a JSON text to be an object or an
+#    array.  Implementations that generate only objects or arrays where a
+#    JSON text is called for will be interoperable in the sense that all
+#    implementations will accept these as conforming JSON texts.
+#
+#       JSON-text = ws value ws
+#
+#    These are the six structural characters:
+#
+#       begin-array     = ws %x5B ws  ; [ left square bracket
+#
+#       begin-object    = ws %x7B ws  ; { left curly bracket
+#
+#       end-array       = ws %x5D ws  ; ] right square bracket
+#
+#       end-object      = ws %x7D ws  ; } right curly bracket
+#
+#       name-separator  = ws %x3A ws  ; : colon
+#
+#       value-separator = ws %x2C ws  ; , comma
+
+[[spec]]
+level = "MUST"
+quote = '''
+A JSON text is a serialized value.
+'''
+
+[[spec]]
+level = "MUST"
+quote = '''
+JSON-text = ws value ws
+'''
+
+[[spec]]
+level = "MUST"
+quote = '''
+   These are the six structural characters:
+
+      begin-array     = ws %x5B ws  ; [ left square bracket
+
+      begin-object    = ws %x7B ws  ; { left curly bracket
+
+      end-array       = ws %x5D ws  ; ] right square bracket
+
+      end-object      = ws %x7D ws  ; } right curly bracket
+
+      name-separator  = ws %x3A ws  ; : colon
+
+      value-separator = ws %x2C ws  ; , comma
+'''

@@ -5,6 +5,12 @@ SPECIFICATION: https://www.rfc-editor.org/rfc/rfc8259
     TEXT[!MUST,implication]:    A JSON text is a serialized value.
     TEXT[!MUST,implication]:       JSON-text = ws value ws
     TEXT[!MUST,implication]:    These are the six structural characters:
+    TEXT[!MUST,implication]:       begin-array     = ws %x5B ws  ; [ left square bracket
+    TEXT[!MUST,implication]:       begin-object    = ws %x7B ws  ; { left curly bracket
+    TEXT[!MUST,implication]:       end-array       = ws %x5D ws  ; ] right square bracket
+    TEXT[!MUST,implication]:       end-object      = ws %x7D ws  ; } right curly bracket
+    TEXT[!MUST,implication]:       name-separator  = ws %x3A ws  ; : colon
+    TEXT[!MUST,implication]:       value-separator = ws %x2C ws  ; , comma
     TEXT[!MUST,implication]:       ws = *(
     TEXT[!MUST,implication]:               %x20 /              ; Space
     TEXT[!MUST,implication]:               %x09 /              ; Horizontal tab

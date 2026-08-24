@@ -1,0 +1,14 @@
+target = "https://www.rfc-editor.org/rfc/rfc8259#section-10"
+
+# Generators
+#
+#    A JSON generator produces JSON text.  The resulting text MUST
+#    strictly conform to the JSON grammar.
+
+[[spec]]
+level = "MUST"
+quote = '''
+The resulting text MUST
+strictly conform to the JSON grammar.
+'''
+

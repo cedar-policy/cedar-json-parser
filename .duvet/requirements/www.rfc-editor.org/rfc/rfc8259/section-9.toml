@@ -1,0 +1,27 @@
+target = "https://www.rfc-editor.org/rfc/rfc8259#section-9"
+
+# Parsers
+#
+#    A JSON parser transforms a JSON text into another representation.  A
+#    JSON parser MUST accept all texts that conform to the JSON grammar.
+#    A JSON parser MAY accept non-JSON forms or extensions.
+# 
+#    An implementation may set limits on the size of texts that it
+#    accepts.  An implementation may set limits on the maximum depth of
+#    nesting.  An implementation may set limits on the range and precision
+#    of numbers.  An implementation may set limits on the length and
+#    character contents of strings.
+
+[[spec]]
+level = "MUST"
+quote = '''
+A
+JSON parser MUST accept all texts that conform to the JSON grammar.
+'''
+
+[[spec]]
+level = "MAY"
+quote = '''
+A JSON parser MAY accept non-JSON forms or extensions.
+'''
+

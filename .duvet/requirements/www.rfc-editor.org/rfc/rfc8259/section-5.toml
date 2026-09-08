@@ -1,0 +1,27 @@
+target = "https://www.rfc-editor.org/rfc/rfc8259#section-5"
+
+# Recall section 5 of the RFC:
+#
+# 5.  Arrays
+#
+#   An array structure is represented as square brackets surrounding zero
+#   or more values (or elements).  Elements are separated by commas.
+#
+#   array = begin-array [ value *( value-separator value ) ] end-array
+#
+#   There is no requirement that the values in an array be of the same
+#   type.
+
+
+[[spec]]
+level = "MUST"
+quote = '''
+An array structure is represented as square brackets surrounding zero
+or more values (or elements).  Elements are separated by commas.
+'''
+
+[[spec]]
+level = "MUST"
+quote = '''
+array = begin-array [ value *( value-separator value ) ] end-array
+'''

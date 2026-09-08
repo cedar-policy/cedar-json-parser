@@ -1,0 +1,91 @@
+SPECIFICATION: https://www.rfc-editor.org/rfc/rfc8259
+  SECTION: [JSON Grammar](#section-2)
+    TEXT[!MUST,implication]:    A JSON text is a sequence of tokens.  The set of tokens includes six
+    TEXT[!MUST,implication]:    structural characters, strings, numbers, and three literal names.
+    TEXT[!MUST,implication]:    A JSON text is a serialized value.
+    TEXT[!MUST,implication]:       JSON-text = ws value ws
+    TEXT[!MUST,implication]:    These are the six structural characters:
+    TEXT[!MUST,implication]:       begin-array     = ws %x5B ws  ; [ left square bracket
+    TEXT[!MUST,implication]:       begin-object    = ws %x7B ws  ; { left curly bracket
+    TEXT[!MUST,implication]:       end-array       = ws %x5D ws  ; ] right square bracket
+    TEXT[!MUST,implication]:       end-object      = ws %x7D ws  ; } right curly bracket
+    TEXT[!MUST,implication]:       name-separator  = ws %x3A ws  ; : colon
+    TEXT[!MUST,implication]:       value-separator = ws %x2C ws  ; , comma
+    TEXT[!MUST,implication]:       ws = *(
+    TEXT[!MUST,implication]:               %x20 /              ; Space
+    TEXT[!MUST,implication]:               %x09 /              ; Horizontal tab
+    TEXT[!MUST,implication]:               %x0A /              ; Line feed or New line
+    TEXT[!MUST,implication]:               %x0D )              ; Carriage return
+
+  SECTION: [Values](#section-3)
+    TEXT[!MUST,implication]:    A JSON value MUST be an object, array, number, or string, or one of
+    TEXT[!MUST,implication]:    the following three literal names:
+    TEXT[!MUST,implementation]:    The literal names MUST be lowercase.
+    TEXT[!MUST,implication]:       value = false / null / true / object / array / number / string
+
+  SECTION: [Objects](#section-4)
+    TEXT[!SHOULD,implementation]: The names within an object SHOULD be unique.
+    TEXT[!MUST,implication]:       object = begin-object [ member *( value-separator member ) ]
+    TEXT[!MUST,implication]:                end-object
+    TEXT[!MUST,implication]:       member = string name-separator value
+
+  SECTION: [Arrays](#section-5)
+    TEXT[!MUST,implication]:    An array structure is represented as square brackets surrounding zero
+    TEXT[!MUST,implication]:    or more values (or elements).  Elements are separated by commas.
+    TEXT[!MUST,implication]:    array = begin-array [ value *( value-separator value ) ] end-array
+
+  SECTION: [Numbers](#section-6)
+    TEXT[!MUST,implication]:       number = [ minus ] int [ frac ] [ exp ]
+    TEXT[!MUST,implication]:       exp = e [ minus / plus ] 1*DIGIT
+    TEXT[!MUST,implication]:       frac = decimal-point 1*DIGIT
+    TEXT[!MUST,implication]:       int = zero / ( digit1-9 *DIGIT )
+
+  SECTION: [Strings](#section-7)
+    TEXT[!MUST,implementation]: All Unicode characters may be placed within the
+    TEXT[!MUST,implementation]:    quotation marks, except for the characters that MUST be escaped:
+    TEXT[!MUST,implementation]:    quotation mark, reverse solidus, and the control characters (U+0000
+    TEXT[!MUST,implementation]:    through U+001F).
+    TEXT[!MUST,implication]:       string = quotation-mark *char quotation-mark
+    TEXT[!MUST,implication]:       char = unescaped /
+    TEXT[!MUST,implication]:           escape (
+    TEXT[!MUST,implication]:               %x22 /          ; "    quotation mark  U+0022
+    TEXT[!MUST,implication]:               %x5C /          ; \    reverse solidus U+005C
+    TEXT[!MUST,implication]:               %x2F /          ; /    solidus         U+002F
+    TEXT[!MUST,implication]:               %x62 /          ; b    backspace       U+0008
+    TEXT[!MUST,implication]:               %x66 /          ; f    form feed       U+000C
+    TEXT[!MUST,implication]:               %x6E /          ; n    line feed       U+000A
+    TEXT[!MUST,implication]:               %x72 /          ; r    carriage return U+000D
+    TEXT[!MUST,implication]:               %x74 /          ; t    tab             U+0009
+    TEXT[!MUST,implication]:               %x75 4HEXDIG )  ; uXXXX                U+XXXX
+    TEXT[!MUST,implication]:       unescaped = %x20-21 / %x23-5B / %x5D-10FFFF
+
+  SECTION: [Character Encoding](#section-8.1)
+    TEXT[!MUST,implementation]:    JSON text exchanged between systems that are not part of a closed
+    TEXT[!MUST,implementation]:    ecosystem MUST be encoded using UTF-8 [RFC3629].
+    TEXT[!MUST,exception]:    Implementations MUST NOT add a byte order mark (U+FEFF) to the
+    TEXT[!MUST,exception]:    beginning of a networked-transmitted JSON text.
+    TEXT[!MAY,exception]: In the interests of
+    TEXT[!MAY,exception]:    interoperability, implementations that parse JSON texts MAY ignore
+    TEXT[!MAY,exception]:    the presence of a byte order mark rather than treating it as an
+    TEXT[!MAY,exception]:    error.
+
+  SECTION: [Unicode Characters](#section-8.2)
+    TEXT[!MUST,implication]:    However, the ABNF in this specification allows member names and
+    TEXT[!MUST,implication]:    string values to contain bit sequences that cannot encode Unicode
+    TEXT[!MUST,implication]:    characters; for example, "\uDEAD" (a single unpaired UTF-16
+    TEXT[!MUST,implication]:    surrogate).
+
+  SECTION: [String Comparison](#section-8.3)
+    TEXT[!MUST,implication]: Implementations that transform the
+    TEXT[!MUST,implication]:    textual representation into sequences of Unicode code units and then
+    TEXT[!MUST,implication]:    perform the comparison numerically, code unit by code unit, are
+    TEXT[!MUST,implication]:    interoperable in the sense that implementations will agree in all
+    TEXT[!MUST,implication]:    cases on equality or inequality of two strings.
+
+  SECTION: [Parsers](#section-9)
+    TEXT[!MUST,todo]:    JSON parser MUST accept all texts that conform to the JSON grammar.
+    TEXT[!MAY,exception]:    A JSON parser MAY accept non-JSON forms or extensions.
+
+  SECTION: [Generators](#section-10)
+    TEXT[!MUST,exception]: The resulting text MUST
+    TEXT[!MUST,exception]:    strictly conform to the JSON grammar.

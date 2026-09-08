@@ -41,6 +41,7 @@
 
 #[allow(non_snake_case)]
 pub(crate) mod byte_specs;
+pub(crate) mod conformance;
 pub(crate) mod decimal;
 pub(crate) mod dedup;
 pub(crate) mod escape;

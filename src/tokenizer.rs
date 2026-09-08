@@ -260,6 +260,16 @@ pub open spec fn spec_all_number_bytes(input: Seq<u8>, start: nat, end: nat) -> 
 
 /// Spec: the integer part at `pos` is valid — either "0" not followed by digit,
 /// or digit1-9 followed by zero or more digits. Returns the end position.
+//
+// The §6 `int` grammar, folding in its `zero` (%x30) and `digit1-9` (%x31-39)
+// sub-rules: '0' is valid only if not followed by a digit (rejecting leading
+// zeros); 0x31-0x39 is followed by zero or more digits.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=spec
+//= level=MUST
+//# int = zero / ( digit1-9 *DIGIT )
+//
 pub open spec fn spec_int_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
     recommends pos <= input.len(),
 {
@@ -281,6 +291,15 @@ pub open spec fn spec_int_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
 }
 
 /// Spec: consume optional fractional part. Returns end position (unchanged if no '.').
+//
+// The §6 `frac` grammar, folding in its `decimal-point` (%x2E) sub-rule: after
+// '.', at least one digit is required, then remaining digits are consumed.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=spec
+//= level=MUST
+//# frac = decimal-point 1*DIGIT
+//
 pub open spec fn spec_frac_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
     recommends pos <= input.len(),
 {
@@ -298,6 +317,12 @@ pub open spec fn spec_frac_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
 }
 
 /// Spec: consume optional exponent part. Returns end position (unchanged if no 'e'/'E').
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=spec
+//= level=MUST
+//# exp = e [ minus / plus ] 1*DIGIT
+//
 pub open spec fn spec_exp_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
     recommends pos <= input.len(),
 {
@@ -322,7 +347,6 @@ pub open spec fn spec_exp_part_end(input: Seq<u8>, pos: nat) -> Option<nat>
 }
 
 /// Spec: a valid JSON number at position `pos` ends at position `end`.
-/// This is the complete RFC 8259 §6 grammar as a spec function.
 pub open spec fn spec_number_end(input: Seq<u8>, pos: nat) -> Option<nat>
     recommends pos <= input.len(),
 {
@@ -344,6 +368,14 @@ pub open spec fn spec_number_end(input: Seq<u8>, pos: nat) -> Option<nat>
 }
 
 /// Spec: input[start..end) is a valid JSON number literal.
+/// This is the complete RFC 8259 §6 grammar as a spec function (in spec_numer_end) and the
+/// constraints on non-emptiness.
+///
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=spec
+//= level=MUST
+//# number = [ minus ] int [ frac ] [ exp ]
+//
 pub open spec fn spec_is_valid_json_number(input: Seq<u8>, start: nat, end: nat) -> bool {
     start < end
     && end <= input.len()
@@ -361,6 +393,15 @@ pub(crate) enum NumberResult {
 /// Consume the integer part of a number literal starting at `pos`.
 /// Expects pos to point at the first digit (after optional '-').
 /// Returns the position after the integer part, or None on error.
+//
+// The `ensures` proves the result matches `spec_int_part_end` (which folds in the
+// `zero` and `digit1-9` sub-rules): '0' is valid only when not followed by a digit
+// (rejecting leading zeros), and 0x31-0x39 is followed by zero or more digits.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=implication
+//# int = zero / ( digit1-9 *DIGIT )
+//
 pub(crate) fn consume_int_part(input: &[u8], pos: usize) -> (result: Option<usize>)
     requires
         pos <= input@.len(),
@@ -397,6 +438,15 @@ pub(crate) fn consume_int_part(input: &[u8], pos: usize) -> (result: Option<usiz
 /// Consume the fractional part of a number literal, if present.
 /// `pos` should point at the potential '.'.
 /// Returns the position after the fractional part (unchanged if no '.' present).
+//
+// The `ensures` proves the result matches `spec_frac_part_end` (which folds in the
+// `decimal-point` sub-rule): after '.', at least one digit is required, then the
+// remaining digits are consumed.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=implication
+//# frac = decimal-point 1*DIGIT
+//
 pub(crate) fn consume_frac_part(input: &[u8], pos: usize) -> (result: Option<usize>)
     requires
         pos <= input@.len(),
@@ -427,6 +477,15 @@ pub(crate) fn consume_frac_part(input: &[u8], pos: usize) -> (result: Option<usi
 /// Consume the exponent part of a number literal, if present.
 /// `pos` should point at the potential 'e'/'E'.
 /// Returns the position after the exponent part (unchanged if no 'e'/'E').
+//
+// The `ensures` proves the result matches `spec_exp_part_end` (which folds in the
+// `e` and sign sub-rules): after 'e'/'E', an optional '+'/'-', then at least one
+// digit is required.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=implication
+//# exp = e [ minus / plus ] 1*DIGIT
+//
 pub(crate) fn consume_exp_part(input: &[u8], pos: usize) -> (result: Option<usize>)
     requires
         pos <= input@.len(),
@@ -460,6 +519,14 @@ pub(crate) fn consume_exp_part(input: &[u8], pos: usize) -> (result: Option<usiz
 /// Consume a complete JSON number literal.
 /// `pos` is the start position (may point at '-' or first digit).
 /// Returns Ok(end) where end is position after the number, or Err on invalid input.
+//
+// The `ensures` proves the result matches `spec_number_end` (the whole §6 grammar,
+// including the leading `minus`): optional '-', required int, optional frac, exp.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-6
+//= type=implication
+//# number = [ minus ] int [ frac ] [ exp ]
+//
 pub(crate) fn consume_number(input: &[u8], pos: usize) -> (result: NumberResult)
     requires
         pos <= input@.len(),
@@ -531,15 +598,21 @@ pub(crate) enum StringResult {
 ///          at tokenizer level — tokenizer only checks structure, not semantics)
 /// - < 0x20 → invalid (control char)
 /// - otherwise → valid UTF-8 char, advance by its length
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=spec
+//= level=MUST
+//# string = quotation-mark *char quotation-mark
+//
 pub open spec fn spec_string_end(input: Seq<u8>, pos: nat) -> Option<nat>
     recommends pos <= input.len(),
     decreases input.len() - pos,
 {
     if pos >= input.len() {
         None // unterminated
-    } else if input[pos as int] == QUOTE() {
+    } else if input[pos as int] == QUOTATION_MARK() {
         Some(pos + 1) // closing quote
-    } else if input[pos as int] == BACKSLASH() {
+    } else if input[pos as int] == REVERSE_SOLIDUS() {
         if pos + 1 >= input.len() {
             None // truncated escape
         } else if spec_is_simple_escape(input[(pos + 1) as int]) {
@@ -575,6 +648,21 @@ pub open spec fn spec_string_end(input: Seq<u8>, pos: nat) -> Option<nat>
 /// Consume a JSON string literal body (after opening '"').
 /// Returns the position just after the closing '"'.
 /// Validates that unescaped content is valid UTF-8.
+//
+// A 0x22 quote terminates the string, 0x5C backslash enters escape processing,
+// and `b < 0x20` (all control characters U+0000..U+001F) is rejected with
+// InvalidEscape. All other bytes are validated as UTF-8.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//# All Unicode characters may be placed within the
+//# quotation marks, except for the characters that MUST be escaped:
+//# quotation mark, reverse solidus, and the control characters (U+0000
+//# through U+001F).
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-7
+//= type=implication
+//# string = quotation-mark *char quotation-mark
+//
 pub(crate) fn consume_string(input: &[u8], pos: usize) -> (result: StringResult)
     requires
         pos <= input@.len(),
@@ -583,7 +671,7 @@ pub(crate) fn consume_string(input: &[u8], pos: usize) -> (result: StringResult)
             StringResult::Ok { end } => {
                 &&& pos <= end && end <= input@.len()
                 &&& end >= 1
-                &&& input@[(end - 1) as int] == QUOTE()
+                &&& input@[(end - 1) as int] == QUOTATION_MARK()
                 &&& spec_string_end(input@, pos as nat) == Some(end as nat)
             },
             _ => spec_string_end(input@, pos as nat) is None,
@@ -689,6 +777,20 @@ pub(crate) fn consume_keyword(input: &[u8], pos: usize, keyword: &[u8]) -> (resu
 // =============================================================================
 
 /// The kind of a JSON token
+//
+// Declares and (by construction) implements the §2 token set: this enum has
+// exactly the six structural kinds, String, Number, and the three literal names.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=spec
+//= level=MUST
+//# A JSON text is a sequence of tokens.  The set of tokens includes six
+//# structural characters, strings, numbers, and three literal names.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=implication
+//# A JSON text is a sequence of tokens.  The set of tokens includes six
+//# structural characters, strings, numbers, and three literal names.
+// This enum has exactly: 6 structural (ArrayStart/End, ObjectStart/End, Comma,
+// Colon), String, Number, and 3 literals (Null, True, False).
 pub enum TokenKind {
     Null,
     True,
@@ -731,6 +833,13 @@ pub(crate) enum TokenResult {
 /// - String tokens are delimited by `"` (opening quote at start)
 /// - Single-character structural tokens have the correct byte
 /// - Number tokens start with '-' or a digit
+//
+// Each structural token is exactly one byte: [ 0x5B, ] 0x5D, { 0x7B, } 0x7D,
+// : 0x3A, , 0x2C — asserted per-kind below.
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=spec
+//= level=MUST
+//# These are the six structural characters:
 pub open spec fn token_content_valid(token: Token, input: Seq<u8>) -> bool {
     // Common structural requirement: non-empty span within bounds
     &&& token.start < token.end
@@ -760,8 +869,8 @@ pub open spec fn token_content_valid(token: Token, input: Seq<u8>) -> bool {
             && input[(token.start + 3) as int] == LOWER_L()
         },
         TokenKind::String => {
-            input[token.start as int] == QUOTE()
-            && input[(token.end - 1) as int] == QUOTE()
+            input[token.start as int] == QUOTATION_MARK()
+            && input[(token.end - 1) as int] == QUOTATION_MARK()
         },
         TokenKind::Number => {
             &&& (input[token.start as int] == DASH()
@@ -769,12 +878,12 @@ pub open spec fn token_content_valid(token: Token, input: Seq<u8>) -> bool {
             &&& spec_is_valid_json_number(input, token.start as nat, token.end as nat)
             &&& spec_all_number_bytes(input, token.start as nat, token.end as nat)
         },
-        TokenKind::ArrayStart  => token.end - token.start == 1 && input[token.start as int] == LBRACKET(),
-        TokenKind::ArrayEnd    => token.end - token.start == 1 && input[token.start as int] == RBRACKET(),
-        TokenKind::ObjectStart => token.end - token.start == 1 && input[token.start as int] == LBRACE(),
-        TokenKind::ObjectEnd   => token.end - token.start == 1 && input[token.start as int] == RBRACE(),
-        TokenKind::Comma       => token.end - token.start == 1 && input[token.start as int] == COMMA(),
-        TokenKind::Colon       => token.end - token.start == 1 && input[token.start as int] == COLON(),
+        TokenKind::ArrayStart  => token.end - token.start == 1 && input[token.start as int] == BEGIN_ARRAY(),
+        TokenKind::ArrayEnd    => token.end - token.start == 1 && input[token.start as int] == END_ARRAY(),
+        TokenKind::ObjectStart => token.end - token.start == 1 && input[token.start as int] == BEGIN_OBJECT(),
+        TokenKind::ObjectEnd   => token.end - token.start == 1 && input[token.start as int] == END_OBJECT(),
+        TokenKind::Comma       => token.end - token.start == 1 && input[token.start as int] == VALUE_SEPARATOR(),
+        TokenKind::Colon       => token.end - token.start == 1 && input[token.start as int] == NAME_SEPARATOR(),
     }
 }
 
@@ -785,18 +894,18 @@ pub open spec fn token_content_valid(token: Token, input: Seq<u8>) -> bool {
 /// Spec: byte can start a valid JSON token.
 /// This enumerates every byte that `get_token` dispatches on.
 pub open spec fn spec_can_start_token(b: u8) -> bool {
-    b == LBRACKET()   // [
-    || b == RBRACKET()   // ]
-    || b == LBRACE()     // {
-    || b == RBRACE()     // }
-    || b == COMMA()      // ,
-    || b == COLON()      // :
+    b == BEGIN_ARRAY()   // [
+    || b == END_ARRAY()   // ]
+    || b == BEGIN_OBJECT()     // {
+    || b == END_OBJECT()     // }
+    || b == VALUE_SEPARATOR()      // ,
+    || b == NAME_SEPARATOR()      // :
     || b == LOWER_T()    // t (true)
     || b == LOWER_F()    // f (false)
     || b == LOWER_N()    // n (null)
     || b == DASH()       // - (number)
     || spec_is_ascii_digit(b) // 0-9 (number)
-    || b == QUOTE()      // " (string)
+    || b == QUOTATION_MARK()      // " (string)
 }
 
 /// Spec: result of attempting to find a token at position `pos`.
@@ -811,8 +920,8 @@ pub open spec fn spec_next_token(input: Seq<u8>, pos: nat) -> Option<(nat, nat)>
     } else {
         let b = input[start as int];
         // Structural: single-byte tokens always succeed
-        if b == LBRACKET() || b == RBRACKET() || b == LBRACE() || b == RBRACE()
-           || b == COMMA() || b == COLON() {
+        if b == BEGIN_ARRAY() || b == END_ARRAY() || b == BEGIN_OBJECT() || b == END_OBJECT()
+           || b == VALUE_SEPARATOR() || b == NAME_SEPARATOR() {
             Some((start, start + 1))
         }
         // Keywords
@@ -853,7 +962,7 @@ pub open spec fn spec_next_token(input: Seq<u8>, pos: nat) -> Option<(nat, nat)>
             }
         }
         // Strings
-        else if b == QUOTE() {
+        else if b == QUOTATION_MARK() {
             match spec_string_end(input, start + 1) {
                 Some(end) => Some((start, end)),
                 None => None,
@@ -875,6 +984,31 @@ pub open spec fn spec_next_token(input: Seq<u8>, pos: nat) -> Option<(nat, nat)>
 ///   the previous token.end produce non-overlapping spans
 /// - **Content validity**: token kind matches the actual bytes at the span
 ///   (keywords have exact bytes, strings start with `"`, etc.)
+//
+// The literal-name lowercase rule and the six structural characters both hold by
+// construction: `get_token`'s `ensures` guarantees `token_content_valid` for every
+// token it emits, keyword dispatch only accepts lowercase 't'/'f'/'n' (uppercase
+// produces ErrUnexpectedToken), and structural tokens carry their exact byte.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-3
+//# The literal names MUST be lowercase.
+//
+//= https://www.rfc-editor.org/rfc/rfc8259#section-2
+//= type=implication
+//# These are the six structural characters:
+//#
+//#       begin-array     = ws %x5B ws  ; [ left square bracket
+//#
+//#       begin-object    = ws %x7B ws  ; { left curly bracket
+//#
+//#       end-array       = ws %x5D ws  ; ] right square bracket
+//#
+//#       end-object      = ws %x7D ws  ; } right curly bracket
+//#
+//#       name-separator  = ws %x3A ws  ; : colon
+//#
+//#       value-separator = ws %x2C ws  ; , comma
+//
 pub(crate) fn get_token(input: &[u8], pos: usize) -> (result: TokenResult)
     requires
         pos <= input@.len(),

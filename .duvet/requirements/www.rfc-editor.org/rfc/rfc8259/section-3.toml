@@ -1,0 +1,35 @@
+target = "https://www.rfc-editor.org/rfc/rfc8259#section-3"
+
+# Values
+#
+#    A JSON value MUST be an object, array, number, or string, or one of
+#    the following three literal names:
+# 
+#       false
+#       null
+#       true
+# 
+#    The literal names MUST be lowercase.  No other literal names are
+#    allowed.
+# 
+#       value = false / null / true / object / array / number / string
+# 
+#       false = %x66.61.6c.73.65   ; false
+# 
+#       null  = %x6e.75.6c.6c      ; null
+# 
+#       true  = %x74.72.75.65      ; true
+
+[[spec]]
+level = "MUST"
+quote = '''
+A JSON value MUST be an object, array, number, or string, or one of
+the following three literal names:
+'''
+
+[[spec]]
+level = "MUST"
+quote = '''
+The literal names MUST be lowercase.
+'''
+

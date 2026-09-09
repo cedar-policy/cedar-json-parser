@@ -1198,11 +1198,11 @@ pub enum TokenizeError {
 /// - Every token's content is valid for its kind (keywords match bytes, etc.)
 /// - Gaps between tokens (and before first / after last) are all whitespace
 pub open spec fn spec_is_tokenization_of(input: Seq<u8>, tokens: Seq<Token>) -> bool {
-    spec_is_tokenization_prefix_of(input, tokens, input.len())
+    spec_is_tokenization_of_prefix(input, tokens, input.len())
 }
 
 /// Spec: `tokens` is a valid tokenization of the prefix of `input` up to `end`.
-pub open spec fn spec_is_tokenization_prefix_of(
+pub open spec fn spec_is_tokenization_of_prefix(
     input: Seq<u8>,
     tokens: Seq<Token>,
     end: nat,
@@ -1253,7 +1253,7 @@ pub(crate) fn tokenize_all(input: &[u8]) -> (result: Result<Vec<Token>, Tokenize
 
     while pos <= input.len()
         invariant
-            spec_is_tokenization_prefix_of(input@, tokens@, pos as nat),
+            spec_is_tokenization_of_prefix(input@, tokens@, pos as nat),
             depth <= MAX_NESTING_DEPTH,
             // Completeness: if input is tokenizable, it's still tokenizable from here
             spec_tokenizable(input@) ==> spec_tokenizable_from(input@, pos as nat),

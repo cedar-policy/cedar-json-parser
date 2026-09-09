@@ -268,6 +268,7 @@ pub open spec fn value_matches_spec(v: JsonValue, s: JsonValueSpec, input: Seq<u
         (JsonValue::Bool { val: v_val, .. }, JsonValueSpec::Bool { val: s_val }) => v_val == s_val,
         (JsonValue::Number { start, end, .. }, JsonValueSpec::Number { bytes }) => {
             start < end && end <= input.len()
+            && spec_is_valid_json_number(input, start as nat, end as nat)
             && bytes =~= input.subrange(start as int, end as int)
         },
         (JsonValue::String { decoded, .. }, JsonValueSpec::String { decoded: s_decoded }) => {

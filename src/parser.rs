@@ -1,7 +1,7 @@
 use crate::dedup::slices_equal;
 use crate::escape::{decode_json_escapes_bytes, DecodeResult};
 use crate::json_spec::*;
-use crate::tokenizer::{tokenize_all, Token, TokenKind, TokenizeError};
+use crate::tokenizer::{self, tokenize_all, Token, TokenKind, TokenizeError};
 use vstd::prelude::*;
 
 verus! {
@@ -616,7 +616,8 @@ pub fn parse_json(input: &[u8]) -> (result: Result<JsonValue, ParseJsonError>)
     ensures
         match result {
             Ok(value) => exists|tokens: Seq<Token>|
-                spec_parse_json(input@, tokens) is Some
+                tokenizer::spec_is_tokenization_of(input@, tokens)
+                && spec_parse_json(input@, tokens) is Some
                 && value_matches_spec(value, #[trigger] spec_parse_json(input@, tokens).unwrap(), input@),
             Err(_) => true,
         },

@@ -1207,7 +1207,7 @@ pub open spec fn spec_is_tokenization_prefix_of(
     tokens: Seq<Token>,
     end: nat,
 ) -> bool {
-    /// `end` is before the end of the input, and after the last tokenized token
+    // `end` is before the end of the input, and after the last tokenized token
     &&& end <= input.len() &&& tokens.len() > 0 ==> tokens[tokens.len() - 1].end <= end
     // All tokens have valid, non-empty spans within the input
     &&& forall|i: int| 0 <= i && i < tokens.len() ==> {

@@ -1190,43 +1190,59 @@ pub enum TokenizeError {
     NestingTooDeep { pos: usize },
 }
 
-/// Tokenize the entire input, collecting tokens into a Vec.
+/// Spec: `tokens` is a valid tokenization of `input`.
 ///
 /// Proven properties:
-/// - Terminates (position strictly increases each iteration)
 /// - All token spans are within bounds
 /// - Tokens are non-overlapping and ordered (each starts >= previous end)
 /// - Every token's content is valid for its kind (keywords match bytes, etc.)
 /// - Gaps between tokens (and before first / after last) are all whitespace
+pub open spec fn spec_is_tokenization_of(input: Seq<u8>, tokens: Seq<Token>) -> bool {
+    spec_is_tokenization_of_prefix(input, tokens, input.len())
+}
+
+/// Spec: `tokens` is a valid tokenization of the prefix of `input` up to `end`.
+pub open spec fn spec_is_tokenization_of_prefix(
+    input: Seq<u8>,
+    tokens: Seq<Token>,
+    end: nat,
+) -> bool {
+    // `end` is before the end of the input, and after the last tokenized token
+    &&& end <= input.len() &&& tokens.len() > 0 ==> tokens[tokens.len() - 1].end <= end
+    // All tokens have valid, non-empty spans within the input
+    &&& forall|i: int| 0 <= i && i < tokens.len() ==> {
+        let t = #[trigger] tokens[i];
+        t.start < t.end && t.end <= end
+    }
+    // Tokens are ordered and non-overlapping
+    &&& forall|i: int, j: int| 0 <= i && i < j && j < tokens.len() ==> {
+        (#[trigger] tokens[i]).end <= (#[trigger] tokens[j]).start
+    }
+    // Every token's kind matches the actual input bytes at its span
+    &&& forall|i: int| 0 <= i && i < tokens.len() ==> {
+        token_content_valid(#[trigger] tokens[i], input)
+    }
+    // Gaps between tokens are all whitespace
+    &&& forall|i: int| #[trigger] tokens[i].start >= 0 && 0 <= i && i < tokens.len() ==>
+        forall|k: int| #![auto]
+            (if i == 0 { 0int } else { tokens[i - 1].end as int }) <= k
+            && k < tokens[i].start
+            ==> spec_is_whitespace(input[k])
+    // Trailing bytes after the last token and before `end` are all whitespace
+    &&& forall|k: int|
+        (if tokens.len() > 0 { tokens[tokens.len() - 1].end as int } else { 0int }) <= k
+        && k < end
+        ==> spec_is_whitespace(#[trigger] input[k])
+}
+
+/// Tokenize the entire input, collecting tokens into a Vec.
+///
+/// Proves termination (position strictly increases each iteration) and correctness of the
+/// tokenization (as stated by `spec_is_tokenization_of`).
 pub(crate) fn tokenize_all(input: &[u8]) -> (result: Result<Vec<Token>, TokenizeError>)
     ensures
         match result {
-            Ok(tokens) => {
-                // All tokens have valid, non-empty spans within the input
-                &&& forall|i: int| 0 <= i && i < tokens@.len() ==> {
-                    let t = #[trigger] tokens@[i];
-                    t.start < t.end && t.end <= input@.len()
-                }
-                // Tokens are ordered and non-overlapping
-                &&& forall|i: int, j: int| 0 <= i && i < j && j < tokens@.len() ==> {
-                    (#[trigger] tokens@[i]).end <= (#[trigger] tokens@[j]).start
-                }
-                // Every token's kind matches the actual input bytes at its span
-                &&& forall|i: int| 0 <= i && i < tokens@.len() ==> {
-                    token_content_valid(#[trigger] tokens@[i], input@)
-                }
-                // Gaps between tokens are all whitespace
-                &&& forall|i: int| #[trigger] tokens@[i].start >= 0 && 0 <= i && i < tokens@.len() ==>
-                    forall|k: int| #![auto]
-                        (if i == 0 { 0int } else { tokens@[i - 1].end as int }) <= k
-                        && k < tokens@[i].start
-                        ==> spec_is_whitespace(input@[k])
-                // Trailing bytes after the last token are all whitespace
-                &&& forall|k: int|
-                    (if tokens@.len() > 0 { tokens@[tokens@.len() - 1].end as int } else { 0int }) <= k
-                    && k < input@.len()
-                    ==> spec_is_whitespace(#[trigger] input@[k])
-            },
+            Ok(tokens) => spec_is_tokenization_of(input@, tokens@),
             Err(TokenizeError::NestingTooDeep { .. }) => true,
             Err(_) => !spec_tokenizable(input@),
         },
@@ -1237,31 +1253,8 @@ pub(crate) fn tokenize_all(input: &[u8]) -> (result: Result<Vec<Token>, Tokenize
 
     while pos <= input.len()
         invariant
-            pos <= input.len(),
+            spec_is_tokenization_of_prefix(input@, tokens@, pos as nat),
             depth <= MAX_NESTING_DEPTH,
-            forall|i: int| 0 <= i && i < tokens@.len() ==> {
-                let t = #[trigger] tokens@[i];
-                t.start < t.end && t.end <= input@.len()
-            },
-            forall|i: int, j: int| 0 <= i && i < j && j < tokens@.len() ==> {
-                (#[trigger] tokens@[i]).end <= (#[trigger] tokens@[j]).start
-            },
-            forall|i: int| 0 <= i && i < tokens@.len() ==> {
-                token_content_valid(#[trigger] tokens@[i], input@)
-            },
-            tokens@.len() > 0 ==> tokens@[tokens@.len() - 1].end <= pos,
-            // Bytes in [0, first_token.start) and between consecutive tokens are whitespace.
-            // Expressed as: for each token i, bytes in [prev_end, token_i.start) are whitespace.
-            forall|i: int| #[trigger] tokens@[i].start >= 0 && 0 <= i && i < tokens@.len() ==>
-                forall|k: int| #![auto]
-                    (if i == 0 { 0int } else { tokens@[i - 1].end as int }) <= k
-                    && k < tokens@[i].start
-                    ==> spec_is_whitespace(input@[k]),
-            // Everything in [last_token.end, pos) is whitespace
-            forall|k: int|
-                (if tokens@.len() > 0 { tokens@[tokens@.len() - 1].end as int } else { 0int }) <= k
-                && k < pos
-                ==> spec_is_whitespace(#[trigger] input@[k]),
             // Completeness: if input is tokenizable, it's still tokenizable from here
             spec_tokenizable(input@) ==> spec_tokenizable_from(input@, pos as nat),
         decreases input.len() - pos,

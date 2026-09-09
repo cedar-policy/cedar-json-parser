@@ -1,7 +1,7 @@
 use crate::dedup::slices_equal;
 use crate::escape::{decode_json_escapes_bytes, DecodeResult};
 use crate::json_spec::*;
-use crate::tokenizer::{tokenize_all, Token, TokenKind, TokenizeError};
+use crate::tokenizer::{self, tokenize_all, Token, TokenKind, TokenizeError};
 use vstd::prelude::*;
 
 verus! {
@@ -113,7 +113,7 @@ pub(crate) fn parse_value(input: &[u8], tokens: &[Token], idx: usize, gas: usize
     requires
         idx <= tokens@.len(),
         forall|i: int| #![auto] 0 <= i && i < tokens@.len() ==>
-            tokens@[i].start < tokens@[i].end && tokens@[i].end <= input@.len(),
+            tokenizer::token_content_valid(tokens@[i], input@),
     ensures
         match result {
             ParseResult::Ok { value, next } => {
@@ -211,7 +211,7 @@ fn parse_array_body(input: &[u8], tokens: &[Token], cur_start: usize, gas: usize
         cur_start >= 1,
         gas > 0,
         forall|i: int| #![auto] 0 <= i && i < tokens@.len() ==>
-            tokens@[i].start < tokens@[i].end && tokens@[i].end <= input@.len(),
+            tokenizer::token_content_valid(tokens@[i], input@),
     ensures
         match result {
             ParseResult::Ok { value, next } => {
@@ -253,7 +253,7 @@ fn parse_array_body(input: &[u8], tokens: &[Token], cur_start: usize, gas: usize
             cur_start >= 1,
             gas > 0,
             forall|i: int| #![auto] 0 <= i && i < tokens@.len() ==>
-                tokens@[i].start < tokens@[i].end && tokens@[i].end <= input@.len(),
+                tokenizer::token_content_valid(tokens@[i], input@),
             // The exec elements match the spec accumulator
             elements@.len() == spec_acc.len(),
             forall|i: int| 0 <= i && i < elements@.len() ==>
@@ -359,7 +359,7 @@ fn parse_object_body(input: &[u8], tokens: &[Token], cur_start: usize, gas: usiz
         cur_start >= 1,
         gas > 0,
         forall|i: int| #![auto] 0 <= i && i < tokens@.len() ==>
-            tokens@[i].start < tokens@[i].end && tokens@[i].end <= input@.len(),
+            tokenizer::token_content_valid(tokens@[i], input@),
     ensures
         match result {
             ParseResult::Ok { value, next } => {
@@ -406,7 +406,7 @@ fn parse_object_body(input: &[u8], tokens: &[Token], cur_start: usize, gas: usiz
             cur_start >= 1,
             gas > 0,
             forall|i: int| #![auto] 0 <= i && i < tokens@.len() ==>
-                tokens@[i].start < tokens@[i].end && tokens@[i].end <= input@.len(),
+                tokenizer::token_content_valid(tokens@[i], input@),
             keys_are_distinct(entries@),
             // Exec entries match spec accumulator
             entries@.len() == spec_acc.len(),
@@ -545,7 +545,7 @@ fn parse_object_body(input: &[u8], tokens: &[Token], cur_start: usize, gas: usiz
 fn parse(input: &[u8], tokens: &[Token]) -> (result: ParseResult)
     requires
         forall|i: int| #![auto] 0 <= i && i < tokens@.len() ==>
-            tokens@[i].start < tokens@[i].end && tokens@[i].end <= input@.len(),
+            tokenizer::token_content_valid(tokens@[i], input@),
     ensures
         match result {
             ParseResult::Ok { value, next } => {
@@ -616,7 +616,8 @@ pub fn parse_json(input: &[u8]) -> (result: Result<JsonValue, ParseJsonError>)
     ensures
         match result {
             Ok(value) => exists|tokens: Seq<Token>|
-                spec_parse_json(input@, tokens) is Some
+                tokenizer::spec_is_tokenization_of(input@, tokens)
+                && spec_parse_json(input@, tokens) is Some
                 && value_matches_spec(value, #[trigger] spec_parse_json(input@, tokens).unwrap(), input@),
             Err(_) => true,
         },
